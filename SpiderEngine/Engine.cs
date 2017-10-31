@@ -124,7 +124,9 @@ namespace SpiderEngine
         return null;
       try
       {
-        ScanResult scanResult = ScanResults.FindOrCreateAndReturn(uri);
+        ScanResult scanResult = null;
+        if (ScanResults.TryGetScanResult(uri, out scanResult))
+          return null;
         HttpClient client = new HttpClient();
         if (pageContainsLink)
         {

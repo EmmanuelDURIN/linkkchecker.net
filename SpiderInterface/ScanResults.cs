@@ -11,13 +11,13 @@ namespace SpiderInterface
 
     private Dictionary<Uri, ScanResult> results { get; set; } = new Dictionary<Uri, ScanResult>();
     public int FailureCount { get => results.Count(sr => (sr.Value.Status != null && sr.Value.Status.Value.IsSuccess()) || sr.Value.Exception != null); }
-    public ScanResult FindOrCreateAndReturn(Uri uri)
+    public bool TryGetScanResult(Uri uri, out ScanResult scanResult)
     {
-      ScanResult scanResult = null;
+      bool result;
       slimLock.EnterWriteLock();
       try
       {
-        if (!results.ContainsKey(uri))
+        if (!(result = results.ContainsKey(uri)))
         {
           scanResult = new ScanResult();
           results.Add(uri, scanResult);
@@ -31,7 +31,7 @@ namespace SpiderInterface
       {
         slimLock.ExitWriteLock();
       }
-      return scanResult;
+      return result;
     }
 
     public void Replace(Uri uri, ScanResult scanResult)
