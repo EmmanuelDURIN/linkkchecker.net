@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using SpiderInterface;
 
 namespace SpiderInterface
 {
@@ -9,11 +10,10 @@ namespace SpiderInterface
   {
     Uri BaseUri { get; set; }
     Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
-    System.Collections.Generic.List<ISpiderExtension> Extensions { get; set; }
+    List<ISpiderExtension> Extensions { get; set; }
     Action<string, MessageSeverity> Logger { get; set; }
-    System.Collections.Generic.Dictionary<Uri, ScanResult> ScanResults { get; set; }
-
-    void LogException(Exception ex, Uri parentUri, Uri uri);
-    Task<bool> Process(System.Collections.Generic.List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true);
+    ScanResults ScanResults { get; set; } 
+    Task<HttpStatusCode?> Process(List<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true);
+    void LogResult(Uri uri, HttpStatusCode statusCode);
   }
 }

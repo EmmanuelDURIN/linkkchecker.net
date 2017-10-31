@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace SpiderEngine
+namespace SpiderInterface
 {
   public static class StatusCodeExtension
   {

@@ -13,7 +13,7 @@ namespace SpiderEngine
 {
   public class DescriptionLengthChecker : ISpiderExtension
   {
-    private class LengthCheckResult
+    private struct LengthCheckResult
     {
       public int Length { get; set; }
       public Uri Url { get; set; }
@@ -34,7 +34,6 @@ namespace SpiderEngine
       bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
       if (!isStillInSite)
         return Task.FromResult<int>(0);
-      //bool isCss = contentType == "text/css";
       HtmlNode documentNode = doc.DocumentNode;
       int length = 0;
       HtmlNode metaDescription = documentNode.SelectSingleNode("//meta[@name='description']");
@@ -51,7 +50,7 @@ namespace SpiderEngine
     {
       foreach (var result in results.OrderByDescending( r => r.Length))
       {
-        if (result.Length > DESCRIPTION_MIN_LENGTH)
+        if (result.Length >= DESCRIPTION_MIN_LENGTH)
         {
           Engine.Logger($"Description length for {result.Url} ok ({result.Length} chars)", MessageSeverity.Success);
         }

@@ -9,16 +9,14 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using SpiderInterface;
-
-
 
 // TODO Extension : Collecter les stats Google Page Speed Insights
 
 // TODO : Créer le batch et mettre LinkChecker en repo Github
 
-// Gérer les liens vers les images dans le CSS comme background : url('logo.gif')
+// TODO checker qu'une page ne pointe pas sur elle même
+
 // Gérer les liens vers autre CSS 
 
 // Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site
@@ -29,20 +27,17 @@ using SpiderInterface;
 
 // plugin pour lister les images (trouver les images en trop sur le site ? )
 
-// TODO checker longueurs des descriptions à 160 caractères pour rentrer dans les sitemap de Google
-
 namespace SpiderEngine
 {
   public class Engine : IEngine
   {
-    public Dictionary<Uri, ScanResult> ScanResults { get; set; } = new Dictionary<Uri, ScanResult>();
+    public ScanResults ScanResults { get; set; } = new ScanResults();
     public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
     public Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
     public Action<String, MessageSeverity> Logger { get; set; }
     private EngineConfig config;
     public Uri BaseUri { get; set; }
 
-    private ReaderWriterLockSlim slimLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
     public EngineConfig Config
     {
       get => config;
@@ -66,7 +61,7 @@ namespace SpiderEngine
       await Init(cancellationToken);
       try
       {
-        await Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageContainsLink: true, cancellationToken: cancellationToken);
+        await Process(new List<CrawlStep>(), uri: Config.StartUri, pageContainsLink: true, cancellationToken: cancellationToken);
       }
       catch (TaskCanceledException)
       {
@@ -113,41 +108,23 @@ namespace SpiderEngine
     /// 
     /// </summary>
     /// <param name="steps"></param>
-    /// <param name="parentUri"></param>
     /// <param name="uri"></param>
     /// <param name="pageContainsLink"></param>
     /// <param name="cancellationToken"></param>
     /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
     /// <returns>true if page is found</returns>
-    public async Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true)
+    public async Task<HttpStatusCode?> Process(List<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true)
     {
-      bool result = true;
+      HttpStatusCode? statusCode = null;
       // Make a copy to be thread safe
       steps = new List<CrawlStep>(steps);
       steps.Add(new CrawlStep { Uri = uri });
       HttpResponseMessage responseMessage = null;
       if (!CheckSupportedUri(uri))
-        return false;
+        return null;
       try
       {
-        ScanResult scanResult = null;
-        slimLock.EnterWriteLock();
-        try
-        {
-          if (!this.ScanResults.ContainsKey(uri))
-          {
-            scanResult = new ScanResult();
-            this.ScanResults.Add(uri, scanResult);
-          }
-          else
-          {
-            scanResult = this.ScanResults[uri];
-          }
-        }
-        finally
-        {
-          slimLock.ExitWriteLock();
-        }
+        ScanResult scanResult = ScanResults.FindOrCreateAndReturn(uri);
         HttpClient client = new HttpClient();
         if (pageContainsLink)
         {
@@ -159,22 +136,20 @@ namespace SpiderEngine
           responseMessage = await client.SendAsync(request, cancellationToken);
         }
         scanResult.Status = responseMessage.StatusCode;
-        HttpStatusCode statusCode = responseMessage.StatusCode;
-        result = responseMessage.IsSuccessStatusCode;
-        MessageSeverity severity = responseMessage.IsSuccessStatusCode ? MessageSeverity.Info : MessageSeverity.Error;
-        Logger($"{statusCode} {uri}", severity);
-        int status = (int)statusCode;
+        statusCode = responseMessage.StatusCode;
+        LogResult(uri, responseMessage.StatusCode);
+        int status = (int)responseMessage.StatusCode;
         switch (status)
         {
           case int s when s >= 200 && s < 300:
             if (!pageContainsLink)
               break;
             bool isStillInSite = this.BaseUri.IsBaseOf(uri);
-            String contentType = responseMessage.Content.Headers.ContentType.MediaType;
-            bool isHtml = contentType == "text/html";
             using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
             {
               HtmlDocument doc = null;
+              String contentType = responseMessage.Content.Headers.ContentType.MediaType;
+              bool isHtml = contentType == "text/html";
               if (isHtml)
               {
                 doc = await GetHtmlDocument(responseMessage, stream);
@@ -193,10 +168,6 @@ namespace SpiderEngine
                 );
               }
             }
-            //if (isCssLink)
-            //{
-            //  await CheckCss(uri, responseMessage, stream);
-            //}
             break;
           case (int)HttpStatusCode.MovedPermanently:
           case (int)HttpStatusCode.Found:
@@ -210,46 +181,26 @@ namespace SpiderEngine
       catch (TaskCanceledException) { }
       catch (Exception ex)
       {
+        Uri parentUri = null;
+        if (steps.Count > 1)
+          parentUri = steps[steps.Count - 2].Uri;
         LogException(ex, parentUri, uri);
-        slimLock.EnterWriteLock();
-        try
-        {
-          if (this.ScanResults.ContainsKey(uri))
-          {
-            this.ScanResults.Remove(uri);
-            this.ScanResults.Add(uri, new ScanResult { Exception = ex });
-          }
-        }
-        finally
-        {
-          slimLock.ExitWriteLock();
-        }
+        ScanResults.Replace(uri, new ScanResult { Exception = ex });
       }
-      return result;
+      return statusCode;
     }
-    //private void CheckCss(Uri uri, HttpResponseMessage responseMessage, Stream stream)
-    //{
-    //  using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
-    //  {
-    //  }
-    //}
+    public void LogResult(Uri uri, HttpStatusCode statusCode)
+    {
+      MessageSeverity severity = statusCode.IsSuccess() ? MessageSeverity.Info : MessageSeverity.Error;
+      Logger($"{statusCode} {uri}", severity);
+    }
     private bool CheckSupportedUri(Uri uri)
     {
       string scheme = uri.Scheme;
       if (!supportedSchemes.Contains(scheme.ToLower()))
       {
-        slimLock.EnterWriteLock();
-        try
-        {
-          this.ScanResults.Add(uri, new ScanResult { IsUnsupportedScheme = true });
-        }
-        finally
-        {
-          slimLock.ExitWriteLock();
-        }
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"Unsupported scheme {scheme} for {uri}");
-        Console.ForegroundColor = ConsoleColor.White;
+        ScanResults.AddOrReplace(uri, new ScanResult { IsUnsupportedScheme = true });
+        Logger($"Unsupported scheme {scheme} for {uri}", MessageSeverity.Warn);
         return false;
       }
       return true;
@@ -305,8 +256,8 @@ namespace SpiderEngine
     private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
     {
       bool mayContainLink = link.Name.ToLower() == "a";
-      //bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("type", "") == "text/css";
-      //mayContainLink |= isCssLink;
+      bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("rel", "") == "stylesheet";
+      mayContainLink |= isCssLink;
       String ATTR_DEFAULT_VALUE = "";
       string attributeValue = link.GetAttributeValue(attributeName, def: ATTR_DEFAULT_VALUE);
       if (attributeValue != ATTR_DEFAULT_VALUE)
@@ -320,16 +271,7 @@ namespace SpiderEngine
         {
           derivedUri = new Uri(uri, attributeValue);
         }
-        bool alreadyVisited = false;
-        slimLock.EnterReadLock();
-        try
-        {
-          alreadyVisited = this.ScanResults.ContainsKey(derivedUri);
-        }
-        finally
-        {
-          slimLock.ExitReadLock();
-        }
+        bool alreadyVisited = ScanResults.ContainsKey(derivedUri);
         if (!alreadyVisited)
         {
           Task t = await Task.Factory.StartNew(
@@ -337,7 +279,7 @@ namespace SpiderEngine
             {
               try
               {
-                await Process(steps, uri, derivedUri, mayContainLink, cancellationToken);
+                await Process(steps, derivedUri, mayContainLink, cancellationToken);
               }
               catch (TaskCanceledException)
               {

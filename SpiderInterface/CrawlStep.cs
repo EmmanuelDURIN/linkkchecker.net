@@ -2,7 +2,7 @@
 
 namespace SpiderInterface
 {
-  public class CrawlStep
+  public struct CrawlStep
   {
     public Uri Uri { get; set; }
   }

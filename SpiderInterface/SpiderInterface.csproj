@@ -48,6 +48,8 @@
     <Compile Include="ISpiderExtension.cs" />
     <Compile Include="MessageSeverity.cs" />
     <Compile Include="ScanResult.cs" />
+    <Compile Include="ScanResults.cs" />
+    <Compile Include="StatusCodeExtension.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

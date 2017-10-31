@@ -3,6 +3,7 @@ using SpiderInterface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,8 +46,8 @@ namespace SpiderEngine
         }
         else
         {
-          bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageContainsLink: false, cancellationToken: CancellationToken, processChildrenLinks: false);
-          if (result)
+          HttpStatusCode? status = await Engine.Process(steps: null, uri: uriToCheck, pageContainsLink: false, cancellationToken: CancellationToken, processChildrenLinks: false);
+          if (status.HasValue && status.Value.IsSuccess() )
             Engine.Logger($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
           else
             Engine.Logger($"Sitemap url not ok {pageUrl}", MessageSeverity.Error);

@@ -39,7 +39,7 @@ namespace LinkChecker
         cts.Cancel();
       };
       task.Wait();
-      Environment.ExitCode = engine.ScanResults.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
+      Environment.ExitCode = engine.ScanResults.FailureCount;
     }
   }
 }
