@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DescriptionLengthChecker.cs" />
     <Compile Include="EngineConfig.cs" />
     <Compile Include="SiteMapChecker.cs" />
     <Compile Include="CanonicalChecker.cs" />
