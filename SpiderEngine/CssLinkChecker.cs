@@ -26,6 +26,9 @@ namespace SpiderEngine
     {
       try
       {
+        Uri parentUri = null;
+        if (steps.Count > 1)
+          parentUri = steps[steps.Count - 2].Uri;
         String contentType = responseMessage.Content.Headers.ContentType.MediaType;
         bool isCss = contentType == "text/css";
         if (isCss)
@@ -46,7 +49,7 @@ namespace SpiderEngine
                   {
                     HttpStatusCode? status = await Engine.Process(new List<CrawlStep>(steps), uri: imageUrl, pageContainsLink: false, cancellationToken: CancellationToken, processChildrenLinks: false);
                     Engine.ScanResults.AddOrReplace(imageUrl, new ScanResult { Status = status, });
-                    Engine.LogResult(uri, status.Value);
+                    Engine.LogResult(uri,parentUri, status.Value);
                   }
                 }
               }

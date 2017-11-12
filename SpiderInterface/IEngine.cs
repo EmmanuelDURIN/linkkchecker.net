@@ -14,6 +14,6 @@ namespace SpiderInterface
     Action<string, MessageSeverity> Logger { get; set; }
     ScanResults ScanResults { get; set; } 
     Task<HttpStatusCode?> Process(List<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true);
-    void LogResult(Uri uri, HttpStatusCode statusCode);
+    void LogResult(Uri uri, Uri parentUri, HttpStatusCode statusCode);
   }
 }

@@ -19,13 +19,13 @@ using SpiderInterface;
 
 // Gérer les liens vers autre CSS 
 
-// Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site
-
 // Faire des warning sur les redirection, pb d'expiration header
 
 // https
 
 // plugin pour lister les images (trouver les images en trop sur le site ? )
+
+// DONE Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site :pas utile le warmup a lieu avec des head
 
 namespace SpiderEngine
 {
@@ -115,6 +115,10 @@ namespace SpiderEngine
     /// <returns>true if page is found</returns>
     public async Task<HttpStatusCode?> Process(List<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true)
     {
+      Uri parentUri = null;
+      if (steps.Count > 1)
+        parentUri = steps[steps.Count - 2].Uri;
+
       HttpStatusCode? statusCode = null;
       // Make a copy to be thread safe
       steps = new List<CrawlStep>(steps);
@@ -139,7 +143,7 @@ namespace SpiderEngine
         }
         scanResult.Status = responseMessage.StatusCode;
         statusCode = responseMessage.StatusCode;
-        LogResult(uri, responseMessage.StatusCode);
+        LogResult(uri, parentUri, responseMessage.StatusCode);
         int status = (int)responseMessage.StatusCode;
         switch (status)
         {
@@ -183,18 +187,15 @@ namespace SpiderEngine
       catch (TaskCanceledException) { }
       catch (Exception ex)
       {
-        Uri parentUri = null;
-        if (steps.Count > 1)
-          parentUri = steps[steps.Count - 2].Uri;
         LogException(ex, parentUri, uri);
         ScanResults.Replace(uri, new ScanResult { Exception = ex });
       }
       return statusCode;
     }
-    public void LogResult(Uri uri, HttpStatusCode statusCode)
+    public void LogResult(Uri uri, Uri parentUri , HttpStatusCode statusCode)
     {
       MessageSeverity severity = statusCode.IsSuccess() ? MessageSeverity.Info : MessageSeverity.Error;
-      Logger($"{statusCode} {uri}", severity);
+      Logger($"{statusCode} for {uri} in {parentUri}", severity);
     }
     private bool CheckSupportedUri(Uri uri)
     {
