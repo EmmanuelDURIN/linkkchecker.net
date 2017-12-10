@@ -21,8 +21,6 @@ using SpiderInterface;
 
 // Faire des warning sur les redirection, pb d'expiration header
 
-// https
-
 // plugin pour lister les images (trouver les images en trop sur le site ? )
 
 // DONE Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site :pas utile le warmup a lieu avec des head
@@ -192,10 +190,13 @@ namespace SpiderEngine
       }
       return statusCode;
     }
-    public void LogResult(Uri uri, Uri parentUri , HttpStatusCode statusCode)
+    public void LogResult(Uri uri, Uri parentUri, HttpStatusCode statusCode)
     {
       MessageSeverity severity = statusCode.IsSuccess() ? MessageSeverity.Info : MessageSeverity.Error;
-      Logger($"{statusCode} for {uri} in {parentUri}", severity);
+      if (parentUri != null)
+        Logger($"{statusCode} for {uri} in {parentUri}", severity);
+      else
+        Logger($"{statusCode} for {uri}", severity);
     }
     private bool CheckSupportedUri(Uri uri)
     {
@@ -226,7 +227,7 @@ namespace SpiderEngine
     private async Task ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
     {
       // Pour obtenir l'encodage
-      // Attention si on avance le curseur, on ne peut plus lirefP le flux
+      // Attention si on avance le curseur, on ne peut plus lire le flux
       //try
       //{
       //  string encodingName = doc.DocumentNode.Element("html").Element("head").Element("meta").GetAttributeValue("charset", "");
@@ -274,6 +275,15 @@ namespace SpiderEngine
         {
           derivedUri = new Uri(uri, attributeValue);
         }
+        // To unescape #xxx; Html entities :
+        String decodedUri = WebUtility.HtmlDecode(derivedUri.ToString());
+        // Remove internal links starting with #
+        int indexOfHash = decodedUri.LastIndexOf('#');
+        if (indexOfHash != -1)
+        {
+          decodedUri = decodedUri.Substring(0, indexOfHash);
+        }
+        derivedUri = new Uri(decodedUri);
         bool alreadyVisited = ScanResults.ContainsKey(derivedUri);
         if (!alreadyVisited)
         {
