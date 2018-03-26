@@ -22,7 +22,7 @@ namespace SpiderEngine
     {
       return Task<int>.FromResult(0);
     }
-    public async Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+    public async Task Process(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       try
       {

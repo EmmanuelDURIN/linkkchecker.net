@@ -52,6 +52,7 @@
     <Compile Include="SiteMapChecker.cs" />
     <Compile Include="CanonicalChecker.cs" />
     <Compile Include="Engine.cs" />
+    <Compile Include="UriExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SpiderInterface\SpiderInterface.csproj">

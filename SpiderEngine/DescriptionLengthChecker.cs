@@ -29,7 +29,7 @@ namespace SpiderEngine
     {
       return Task<int>.FromResult(0);
     }
-    public Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+    public Task Process(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
       if (!isStillInSite)

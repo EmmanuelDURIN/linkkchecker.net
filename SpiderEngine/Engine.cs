@@ -153,15 +153,7 @@ namespace SpiderEngine
                   await ProcessLinks(steps, uri, responseMessage, doc, cancellationToken);
                 }
               }
-              foreach (var extension in Extensions)
-              {
-                Task t = await Task.Factory.StartNew(
-                  async () =>
-                  {
-                    await extension.Process(steps, uri, responseMessage, doc);
-                  }
-                );
-              }
+              await ApplyExtensions(steps, uri, responseMessage, doc);
             }
             break;
           case (int)HttpStatusCode.MovedPermanently:
@@ -180,6 +172,19 @@ namespace SpiderEngine
         ScanResults.Replace(uri, new ScanResult { Exception = ex });
       }
       return statusCode;
+    }
+
+    private async Task ApplyExtensions(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+    {
+      foreach (var extension in Extensions)
+      {
+        Task t = await Task.Factory.StartNew(
+          async () =>
+          {
+            await extension.Process(uri, steps, responseMessage, doc);
+          }
+        );
+      }
     }
 
     private async Task<HttpResponseMessage> RequestDocument(Uri uri, bool pageContainsLink, CancellationToken cancellationToken)
@@ -266,28 +271,11 @@ namespace SpiderEngine
       bool mayContainLink = link.Name.ToLower() == "a";
       bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("rel", "") == "stylesheet";
       mayContainLink |= isCssLink;
-      String ATTR_DEFAULT_VALUE = "";
-      string attributeValue = link.GetAttributeValue(attributeName, def: ATTR_DEFAULT_VALUE);
-      if (attributeValue != ATTR_DEFAULT_VALUE)
+      //String ATTR_DEFAULT_VALUE = "";
+      string relativeUrl = link.GetAttributeValue(attributeName, def: String.Empty);
+      if (relativeUrl != String.Empty)
       {
-        Uri derivedUri;
-        if (attributeValue.ToLower().StartsWith("http"))
-        {
-          derivedUri = new Uri(attributeValue);
-        }
-        else
-        {
-          derivedUri = new Uri(uri, attributeValue);
-        }
-        // To unescape #xxx; Html entities :
-        String decodedUri = WebUtility.HtmlDecode(derivedUri.ToString());
-        // Remove internal links starting with #
-        int indexOfHash = decodedUri.LastIndexOf('#');
-        if (indexOfHash != -1)
-        {
-          decodedUri = decodedUri.Substring(0, indexOfHash);
-        }
-        derivedUri = new Uri(decodedUri);
+        Uri derivedUri = uri.GetDerivedUri(relativeUrl);
         bool alreadyVisited = ScanResults.ContainsKey(derivedUri);
         if (!alreadyVisited)
         {

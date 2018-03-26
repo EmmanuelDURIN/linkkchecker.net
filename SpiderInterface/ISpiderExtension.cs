@@ -11,9 +11,8 @@ namespace SpiderInterface
   {
     IEngine Engine { get; set; }
     CancellationToken CancellationToken { get; set; }
-
-    Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc);
-    Task Done();
     Task Init();
+    Task Process(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc);
+    Task Done();
   }
 }
