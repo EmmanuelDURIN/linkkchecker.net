@@ -52,15 +52,15 @@ namespace SpiderEngine
       {
         if (result.Length >= DESCRIPTION_MIN_LENGTH)
         {
-          Engine.Logger($"Description length for {result.Url} ok ({result.Length} chars)", MessageSeverity.Success);
+          Engine.Log($"Description length for {result.Url} ok ({result.Length} chars)", MessageSeverity.Success);
         }
         else if (result.Length == 0)
         {
-          Engine.Logger($"No description for {result.Url} ", MessageSeverity.Error);
+          Engine.Log($"No description for {result.Url} ", MessageSeverity.Error);
         }
         else
         {
-          Engine.Logger($"Description for {result.Url} is too short ({result.Length} chars)", MessageSeverity.Error);
+          Engine.Log($"Description for {result.Url} is too short ({result.Length} chars)", MessageSeverity.Error);
         }
       }
       return Task<int>.FromResult(0);

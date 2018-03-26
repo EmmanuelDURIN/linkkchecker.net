@@ -13,8 +13,6 @@ using SpiderInterface;
 
 // TODO Extension : Collecter les stats Google Page Speed Insights
 
-// TODO : Créer le batch et mettre LinkChecker en repo Github
-
 // TODO checker qu'une page ne pointe pas sur elle même
 
 // Gérer les liens vers autre CSS 
@@ -32,7 +30,7 @@ namespace SpiderEngine
     public ScanResults ScanResults { get; set; } = new ScanResults();
     public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
     public Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
-    public Action<String, MessageSeverity> Logger { get; set; }
+    public Action<String, MessageSeverity> Log { get; set; }
     private EngineConfig config;
     public Uri BaseUri { get; set; }
 
@@ -72,7 +70,7 @@ namespace SpiderEngine
     }
     private async Task Init(CancellationToken cancellationToken)
     {
-      Logger($"Starting crawl at {DateTime.Now}", MessageSeverity.Info);
+      Log($"Starting crawl at {DateTime.Now}", MessageSeverity.Info);
       foreach (var extension in config.Extensions)
         extension.CancellationToken = cancellationToken;
       stopwatch.Start();
@@ -98,8 +96,8 @@ namespace SpiderEngine
         );
       }
       stopwatch.Stop();
-      Logger($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
-      Logger($"Elapsed Time {stopwatch.Elapsed}", MessageSeverity.Info);
+      Log($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
+      Log($"Elapsed Time {stopwatch.Elapsed}", MessageSeverity.Info);
     }
 
     /// <summary>
@@ -137,15 +135,13 @@ namespace SpiderEngine
         switch (status)
         {
           case int s when s >= 200 && s < 300:
-            if (!pageContainsLink)
-              break;
             bool isStillInSite = this.BaseUri.IsBaseOf(uri);
+            String contentType = responseMessage.Content.Headers.ContentType.MediaType;
+            bool isHtml = contentType == "text/html";
             using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
             {
               HtmlDocument doc = null;
-              String contentType = responseMessage.Content.Headers.ContentType.MediaType;
-              bool isHtml = contentType == "text/html";
-              if (isHtml)
+              if (isHtml && pageContainsLink)
               {
                 doc = await GetHtmlDocument(responseMessage, stream);
                 if (isStillInSite && processChildrenLinks)
@@ -154,6 +150,9 @@ namespace SpiderEngine
                 }
               }
               await ApplyExtensions(steps, uri, responseMessage, doc);
+              //if (!pageContainsLink)
+              //  break;
+              //await ApplyExtensions(steps, uri, responseMessage, doc);
             }
             break;
           case (int)HttpStatusCode.MovedPermanently:
@@ -193,9 +192,9 @@ namespace SpiderEngine
       // No need to ask page contents with no link
       HttpMethod method = pageContainsLink ? HttpMethod.Get : HttpMethod.Head;
       HttpRequestMessage request = new HttpRequestMessage(method, uri);
-      Logger($"\tRequesting {method} {uri}", MessageSeverity.Debug);
+      //Log($"\tRequesting {method} {uri}", MessageSeverity.Debug);
       HttpResponseMessage responseMessage = await client.SendAsync(request, cancellationToken);
-      Logger($"\tRequested  {method} {uri}" + uri, MessageSeverity.Debug);
+      //Log($"\tRequested  {method} {uri}" + uri, MessageSeverity.Debug);
       return responseMessage;
     }
 
@@ -203,9 +202,9 @@ namespace SpiderEngine
     {
       MessageSeverity severity = statusCode.IsSuccess() ? MessageSeverity.Info : MessageSeverity.Error;
       if (parentUri != null)
-        Logger($"{statusCode} for {uri} in {parentUri}", severity);
+        Log($"{statusCode} for {uri} in {parentUri}", severity);
       else
-        Logger($"{statusCode} for {uri}", severity);
+        Log($"{statusCode} for {uri}", severity);
     }
     private bool CheckSupportedUri(Uri uri)
     {
@@ -213,7 +212,7 @@ namespace SpiderEngine
       if (!supportedSchemes.Contains(scheme.ToLower()))
       {
         ScanResults.AddOrReplace(uri, new ScanResult { IsUnsupportedScheme = true });
-        Logger($"Unsupported scheme {scheme} for {uri}", MessageSeverity.Warn);
+        Log($"Unsupported scheme {scheme} for {uri}", MessageSeverity.Warn);
         return false;
       }
       return true;

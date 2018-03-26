@@ -27,7 +27,7 @@ namespace SpiderEngine
       }
       catch (Exception ex)
       {
-        Engine.Logger($"Error loading/reading sitemap.xml {ex.Message}", MessageSeverity.Error);
+        Engine.Log($"Error loading/reading sitemap.xml {ex.Message}", MessageSeverity.Error);
       }
       return Task<int>.FromResult(0);
     }
@@ -42,15 +42,15 @@ namespace SpiderEngine
         Uri uriToCheck = new Uri(pageUrl);
         if (Engine.ScanResults.ContainsKey(uriToCheck))
         {
-          Engine.Logger($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
+          Engine.Log($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
         }
         else
         {
           HttpStatusCode? status = await Engine.Process(steps: null, uri: uriToCheck, pageContainsLink: false, cancellationToken: CancellationToken, processChildrenLinks: false);
           if (status.HasValue && status.Value.IsSuccess() )
-            Engine.Logger($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
+            Engine.Log($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
           else
-            Engine.Logger($"Sitemap url not ok {pageUrl}", MessageSeverity.Error);
+            Engine.Log($"Sitemap url not ok {pageUrl}", MessageSeverity.Error);
         }
       }
     }

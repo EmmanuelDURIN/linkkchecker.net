@@ -59,7 +59,7 @@ namespace SpiderEngine
       }
       catch (Exception ex)
       {
-        Engine.Logger($"Exception checking CSS for ${uri} : {ex.Message}", MessageSeverity.Error);
+        Engine.Log($"Exception checking CSS for ${uri} : {ex.Message}", MessageSeverity.Error);
       }
     }
     public Task Done()
