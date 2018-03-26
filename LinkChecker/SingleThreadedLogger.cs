@@ -34,6 +34,13 @@ namespace LinkChecker
           case MessageSeverity.Error:
             Console.ForegroundColor = ConsoleColor.Red;
             break;
+          case MessageSeverity.Debug:
+#if DEBUG
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            break;
+#else
+            return;
+#endif
           default:
             break;
         }

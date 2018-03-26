@@ -121,7 +121,6 @@ namespace SpiderEngine
       // Make a copy to be thread safe
       steps = new List<CrawlStep>(steps);
       steps.Add(new CrawlStep { Uri = uri });
-      HttpResponseMessage responseMessage = null;
       if (!CheckSupportedUri(uri))
         return null;
       try
@@ -129,16 +128,8 @@ namespace SpiderEngine
         ScanResult scanResult = null;
         if (ScanResults.TryGetScanResult(uri, out scanResult))
           return null;
-        HttpClient client = new HttpClient();
-        if (pageContainsLink)
-        {
-          responseMessage = await client.GetAsync(uri, cancellationToken);
-        }
-        else
-        {
-          HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, uri);
-          responseMessage = await client.SendAsync(request, cancellationToken);
-        }
+        HttpResponseMessage responseMessage = await RequestDocument(uri, pageContainsLink, cancellationToken);
+
         scanResult.Status = responseMessage.StatusCode;
         statusCode = responseMessage.StatusCode;
         LogResult(uri, parentUri, responseMessage.StatusCode);
@@ -190,6 +181,19 @@ namespace SpiderEngine
       }
       return statusCode;
     }
+
+    private async Task<HttpResponseMessage> RequestDocument(Uri uri, bool pageContainsLink, CancellationToken cancellationToken)
+    {
+      HttpClient client = new HttpClient();
+      // No need to ask page contents with no link
+      HttpMethod method = pageContainsLink ? HttpMethod.Get : HttpMethod.Head;
+      HttpRequestMessage request = new HttpRequestMessage(method, uri);
+      Logger($"\tRequesting {method} {uri}", MessageSeverity.Debug);
+      HttpResponseMessage responseMessage = await client.SendAsync(request, cancellationToken);
+      Logger($"\tRequested  {method} {uri}" + uri, MessageSeverity.Debug);
+      return responseMessage;
+    }
+
     public void LogResult(Uri uri, Uri parentUri, HttpStatusCode statusCode)
     {
       MessageSeverity severity = statusCode.IsSuccess() ? MessageSeverity.Info : MessageSeverity.Error;

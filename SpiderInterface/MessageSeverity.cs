@@ -9,6 +9,7 @@ namespace SpiderInterface
   public enum MessageSeverity
   {
     Success,
+    Debug,
     Info,
     Warn,
     Error,
