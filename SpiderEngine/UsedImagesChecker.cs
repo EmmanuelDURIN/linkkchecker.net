@@ -15,8 +15,17 @@ namespace SpiderEngine
   {
     private class UsedImagesCheckerConfig
     {
+      /// <summary>
+      /// Directory on disk where to find images to be compared with site content
+      /// </summary>
       public String ImagesBaseDirectory { get; set; }
+      /// <summary>
+      /// Directory of site to remove of url for comparison
+      /// </summary>
       public String SitePrefixToRemove { get; set; }
+      /// <summary>
+      /// All sites containing images to scan
+      /// </summary>
       public String[] SitesToScan { get; set; }
     }
     private UsedImagesCheckerConfig config;
@@ -87,13 +96,19 @@ namespace SpiderEngine
       else
       {
         var filesNotInProject = filesInSite.Except(filesOnDisk).OrderBy(f => f).ToList();
-        var filesNotInSiteCaseInsentitiveEquals = filesOnDisk.Select(n => n.ToLower()).Except(filesInSite.Select(n => n.ToLower())).OrderBy(f => f).ToList();
+        var filesNotInProjectCaseInsentitive = filesInSite.Select(n => n.ToLower()).Except(filesOnDisk.Select(n => n.ToLower())).OrderBy(f => f).ToList();
+        var filesNotUsedInSiteCaseInsentitive = filesOnDisk.Select(n => n.ToLower()).Except(filesInSite.Select(n => n.ToLower())).OrderBy(f => f).ToList();
 
         DisplayFiles("Files NOT in project", filesNotInProject);
+        if (filesNotInProjectCaseInsentitive.Count==0)
+          Engine.Log("\tNo File missing with case insensitive comparisons", MessageSeverity.Error);
+        else
+          DisplayFiles("Files NOT in project - case insensitive", filesNotInProjectCaseInsentitive);
 
         DisplayFiles("Files NOT USED in site", filesNotUsedInSite);
-        if (filesNotInSiteCaseInsentitiveEquals.Any())
-          DisplayFiles("Files not in site - case insensitive", filesNotInSiteCaseInsentitiveEquals);
+        if (filesNotUsedInSiteCaseInsentitive.Count == 0)
+          Engine.Log("\tNo File missing with case insensitive comparisons", MessageSeverity.Error);
+        DisplayFiles("Files NOT in site - case insensitive", filesNotUsedInSiteCaseInsentitive);
       }
       Engine.Log($"*********************************************************\n", MessageSeverity.Success);
       return Task<int>.FromResult(0);
