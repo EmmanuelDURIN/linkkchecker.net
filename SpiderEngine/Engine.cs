@@ -19,7 +19,8 @@ using SpiderInterface;
 
 // Faire des warning sur les redirection, pb d'expiration header
 
-// plugin pour lister les images (trouver les images en trop sur le site ? )
+// TODO  CSS inlined in page not parsed versus CSS linked to is parsed
+// TODO UsedImagesChecker should use list of images from Engine.ScanResults instead of building own list
 
 // DONE Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site :pas utile le warmup a lieu avec des head
 
@@ -146,13 +147,10 @@ namespace SpiderEngine
                 doc = await GetHtmlDocument(responseMessage, stream);
                 if (isStillInSite && processChildrenLinks)
                 {
-                  await ProcessLinks(steps, uri, responseMessage, doc, cancellationToken);
+                  await ScanLinks(steps, uri, responseMessage, doc, cancellationToken);
                 }
               }
               await ApplyExtensions(steps, uri, responseMessage, doc);
-              //if (!pageContainsLink)
-              //  break;
-              //await ApplyExtensions(steps, uri, responseMessage, doc);
             }
             break;
           case (int)HttpStatusCode.MovedPermanently:
@@ -232,7 +230,7 @@ namespace SpiderEngine
       doc.Load(stream, Encoding.UTF8);
       return Task<HtmlDocument>.FromResult(doc);
     }
-    private async Task ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
+    private async Task ScanLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
     {
       // Pour obtenir l'encodage
       // Attention si on avance le curseur, on ne peut plus lire le flux
@@ -258,21 +256,20 @@ namespace SpiderEngine
         List<Task> tasks = new List<Task>();
         foreach (var link in links)
         {
-          Task task = ScanLink(steps, uri, attributeName, link, cancellationToken);
+          Task task = ProcessLink(steps, uri, attributeName, link, cancellationToken);
           tasks.Add(task);
         }
         await Task.WhenAll(tasks);
       }
     }
 
-    private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
+    private async Task ProcessLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
     {
       bool mayContainLink = link.Name.ToLower() == "a";
       bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("rel", "") == "stylesheet";
       mayContainLink |= isCssLink;
-      //String ATTR_DEFAULT_VALUE = "";
-      string relativeUrl = link.GetAttributeValue(attributeName, def: String.Empty);
-      if (relativeUrl != String.Empty)
+      string relativeUrl = link.GetAttributeValue(attributeName, def: null);
+      if (relativeUrl != null)
       {
         Uri derivedUri = uri.GetDerivedUri(relativeUrl);
         bool alreadyVisited = ScanResults.ContainsKey(derivedUri);

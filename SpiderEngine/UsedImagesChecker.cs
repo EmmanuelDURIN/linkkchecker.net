@@ -31,7 +31,7 @@ namespace SpiderEngine
     private UsedImagesCheckerConfig config;
     private List<String> requestedImages = new List<String>();
     private static String[] imageTypes = { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/tiff" };
-    private static String[] imageExtensions = { "jpeg", "jpg", "png", "gif", "tiff"};
+    private static String[] imageExtensions = { "jpeg", "jpg", "png", "gif", "tiff" };
     private bool isConfigured = false;
     public CancellationToken CancellationToken { get; set; }
     public IEngine Engine { get; set; }
@@ -47,7 +47,7 @@ namespace SpiderEngine
             string json = reader.ReadToEnd();
             config = JsonConvert.DeserializeObject<UsedImagesCheckerConfig>(json);
             isConfigured = Directory.Exists(config.ImagesBaseDirectory);
-            if ( ! isConfigured )
+            if (!isConfigured)
               Engine.Log($"Path for comparing images doesn't exist {config.ImagesBaseDirectory}. can't compare site and project images", MessageSeverity.Error);
           }
         }
@@ -101,16 +101,27 @@ namespace SpiderEngine
         var filesNotInProjectCaseInsentitive = filesInSite.Select(n => n.ToLower()).Except(filesOnDisk.Select(n => n.ToLower())).OrderBy(f => f).ToList();
         var filesNotUsedInSiteCaseInsentitive = filesOnDisk.Select(n => n.ToLower()).Except(filesInSite.Select(n => n.ToLower())).OrderBy(f => f).ToList();
 
-        DisplayFiles("Files NOT in project", filesNotInProject);
-        if (filesNotInProjectCaseInsentitive.Count==0)
-          Engine.Log("\tNo File missing with case insensitive comparisons", MessageSeverity.Error);
+        if (filesNotInProjectCaseInsentitive.Count == 0)
+        {
+          if (filesNotInProject.Any())
+          {
+            Engine.Log("No File missing in project with case insensitive comparisons, but ...", MessageSeverity.Error);
+            DisplayFiles("Files NOT in project with case sentive comparison", filesNotInProject);
+          }
+        }
         else
           DisplayFiles("Files NOT in project - case insensitive", filesNotInProjectCaseInsentitive);
 
-        DisplayFiles("Files NOT USED in site", filesNotUsedInSite);
         if (filesNotUsedInSiteCaseInsentitive.Count == 0)
-          Engine.Log("\tNo File missing with case insensitive comparisons", MessageSeverity.Error);
-        DisplayFiles("Files NOT in site - case insensitive", filesNotUsedInSiteCaseInsentitive);
+        {
+          if (filesNotUsedInSite.Any())
+          {
+            Engine.Log("No File not used in site with case insensitive comparisons, but ...", MessageSeverity.Error);
+            DisplayFiles("Files NOT used in site with case sentive comparison", filesNotInProject);
+          }
+        }
+        else
+          DisplayFiles("Files NOT in site - case insensitive", filesNotUsedInSiteCaseInsentitive);
       }
       Engine.Log($"*********************************************************\n", MessageSeverity.Success);
       return Task<int>.FromResult(0);
@@ -120,12 +131,10 @@ namespace SpiderEngine
     {
       if (files.Count > 0)
       {
-        Engine.Log($"{label}", MessageSeverity.Error);
-        Engine.Log($"{files.Count} files missing", MessageSeverity.Error);
-
+        Engine.Log($"{files.Count} {label}", MessageSeverity.Error);
         foreach (var file in files)
         {
-          Engine.Log($"\t{file}", MessageSeverity.Error);
+          Engine.Log($"\t{file}", MessageSeverity.Info);
         }
       }
     }
