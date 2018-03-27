@@ -47,6 +47,8 @@ namespace SpiderEngine
             string json = reader.ReadToEnd();
             config = JsonConvert.DeserializeObject<UsedImagesCheckerConfig>(json);
             isConfigured = Directory.Exists(config.ImagesBaseDirectory);
+            if ( ! isConfigured )
+              Engine.Log($"Path for comparing images doesn't exist {config.ImagesBaseDirectory}. can't compare site and project images", MessageSeverity.Error);
           }
         }
         catch (Exception ex)
