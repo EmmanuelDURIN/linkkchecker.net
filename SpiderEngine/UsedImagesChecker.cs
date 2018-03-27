@@ -30,8 +30,8 @@ namespace SpiderEngine
     }
     private UsedImagesCheckerConfig config;
     private List<String> requestedImages = new List<String>();
-    private static String[] imageTypes = { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/tiff", "image/ico" };
-    private static String[] imageExtensions = { "jpeg", "jpg", "png", "gif", "tiff", "ico" };
+    private static String[] imageTypes = { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/tiff" };
+    private static String[] imageExtensions = { "jpeg", "jpg", "png", "gif", "tiff"};
     private bool isConfigured = false;
     public CancellationToken CancellationToken { get; set; }
     public IEngine Engine { get; set; }
