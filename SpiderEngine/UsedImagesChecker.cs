@@ -74,13 +74,13 @@ namespace SpiderEngine
       List<String> filesOnDisk = new List<String>();
       FindImageFiles(config.ImagesBaseDirectory, config.ImagesBaseDirectory, filesOnDisk);
       List<String> filesInSite = null;
-        filesInSite = Engine.ScanResults
-                                  .Where(sr => IsImageInteresting(uri: sr.Key, scanResult: sr.Value))
-                                  .Select(sr => sr.Key.LocalPath)
-                                  .Where(n => n.StartsWith("/" + config.SitePrefixToRemove))
-                                  .Select(n => n.Substring(config.SitePrefixToRemove.Length + 1))
-                                  .Select(n => n.Replace(oldChar: '/', newChar: '\\'))
-                                  .ToList();
+      filesInSite = Engine.ScanResults
+                                .Where(sr => IsImageInteresting(uri: sr.Key, scanResult: sr.Value))
+                                .Select(sr => sr.Key.LocalPath)
+                                .Where(n => n.StartsWith("/" + config.SitePrefixToRemove))
+                                .Select(n => n.Substring(config.SitePrefixToRemove.Length + 1))
+                                .Select(n => n.Replace(oldChar: '/', newChar: '\\'))
+                                .ToList();
       var filesNotUsedInSite = filesOnDisk.Except(filesInSite).OrderBy(f => f).ToList();
 
       Engine.Log($"\n*********************************************************", MessageSeverity.Success);
