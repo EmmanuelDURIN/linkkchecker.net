@@ -1,5 +1,4 @@
 ﻿SpiderEngine.CanonicalChecker,SpiderEngine.dll
 SpiderEngine.SiteMapChecker,SpiderEngine.dll
 SpiderEngine.DescriptionLengthChecker,SpiderEngine.dll
-SpiderEngine.CssLinkChecker,SpiderEngine.dll
 SpiderEngine.UsedImagesChecker,SpiderEngine.dll

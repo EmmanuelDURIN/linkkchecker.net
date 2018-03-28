@@ -8,5 +8,6 @@ namespace SpiderInterface
     public HttpStatusCode? Status { get; set; }
     public Exception Exception { get; set; }
     public bool IsUnsupportedScheme { get; set; }
+    public String ContentType { get; set; }
   }
 }

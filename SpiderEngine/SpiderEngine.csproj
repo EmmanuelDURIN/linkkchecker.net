@@ -49,7 +49,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CssLinkChecker.cs" />
     <Compile Include="UsedImagesChecker.cs" />
     <Compile Include="DescriptionLengthChecker.cs" />
     <Compile Include="EngineConfig.cs" />

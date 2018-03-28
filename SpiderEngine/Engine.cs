@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SpiderInterface;
+using ExCSS;
 
 // TODO Extension : Collecter les stats Google Page Speed Insights
 
@@ -22,6 +23,8 @@ using SpiderInterface;
 // TODO  CSS inlined in page not parsed versus CSS linked to is parsed
 // TODO UsedImagesChecker should use list of images from Engine.ScanResults instead of building own list
 
+// TODO Check ico links
+
 // DONE Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site :pas utile le warmup a lieu avec des head
 
 namespace SpiderEngine
@@ -31,9 +34,9 @@ namespace SpiderEngine
     public ScanResults ScanResults { get; set; } = new ScanResults();
     public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
     public Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
+    public Uri BaseUri { get; set; }
     public Action<String, MessageSeverity> Log { get; set; }
     private EngineConfig config;
-    public Uri BaseUri { get; set; }
 
     public EngineConfig Config
     {
@@ -128,30 +131,33 @@ namespace SpiderEngine
         if (ScanResults.TryGetScanResult(uri, out scanResult))
           return null;
         HttpResponseMessage responseMessage = await RequestDocument(uri, pageContainsLink, cancellationToken);
-
-        scanResult.Status = responseMessage.StatusCode;
-        statusCode = responseMessage.StatusCode;
+        statusCode = scanResult.Status = responseMessage.StatusCode;
         LogResult(uri, parentUri, responseMessage.StatusCode);
-        int status = (int)responseMessage.StatusCode;
-        switch (status)
+        switch ((int)responseMessage.StatusCode)
         {
           case int s when s >= 200 && s < 300:
             bool isStillInSite = this.BaseUri.IsBaseOf(uri);
             String contentType = responseMessage.Content.Headers.ContentType.MediaType;
-            bool isHtml = contentType == "text/html";
-            using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
+            scanResult.ContentType = contentType;
+
+            HtmlDocument doc = null;
+            if (contentType == "text/html" && pageContainsLink)
             {
-              HtmlDocument doc = null;
-              if (isHtml && pageContainsLink)
-              {
+              using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
                 doc = await GetHtmlDocument(responseMessage, stream);
-                if (isStillInSite && processChildrenLinks)
-                {
-                  await ScanLinks(steps, uri, responseMessage, doc, cancellationToken);
-                }
+              if (isStillInSite && processChildrenLinks)
+              {
+                await ScanHtmlLinks(steps, uri, responseMessage, doc, cancellationToken);
               }
-              await ApplyExtensions(steps, uri, responseMessage, doc);
+              await ProcessEmbededCss(steps, uri, doc, cancellationToken);
             }
+
+            StyleSheet styleSheet = null;
+            if (contentType == "text/css")
+              styleSheet = await ParseCss(steps, uri, await responseMessage.Content.ReadAsStringAsync(), cancellationToken);
+
+            await ApplyExtensions(steps, uri, responseMessage, doc, styleSheet);
+
             break;
           case (int)HttpStatusCode.MovedPermanently:
           case (int)HttpStatusCode.Found:
@@ -170,15 +176,26 @@ namespace SpiderEngine
       }
       return statusCode;
     }
-
-    private async Task ApplyExtensions(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+    private async Task ApplyExtensions(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, StyleSheet styleSheet)
     {
       foreach (var extension in Extensions)
       {
         Task t = await Task.Factory.StartNew(
           async () =>
           {
-            await extension.Process(uri, steps, responseMessage, doc);
+            try
+            {
+              if (doc != null)
+                await extension.ProcessHtml(uri, steps, responseMessage, doc);
+              else if (styleSheet != null)
+                await extension.ProcessCss(uri, steps, responseMessage, styleSheet);
+              else
+                await extension.ProcessOther(uri, steps, responseMessage);
+            }
+            catch (Exception ex)
+            {
+              Log($"Processing Error with extension {extension.GetType()} {ex}", MessageSeverity.Error);
+            }
           }
         );
       }
@@ -196,9 +213,11 @@ namespace SpiderEngine
       return responseMessage;
     }
 
-    public void LogResult(Uri uri, Uri parentUri, HttpStatusCode statusCode)
+    public void LogResult(Uri uri, Uri parentUri, HttpStatusCode? statusCode)
     {
-      MessageSeverity severity = statusCode.IsSuccess() ? MessageSeverity.Info : MessageSeverity.Error;
+      MessageSeverity severity = MessageSeverity.Error;
+      if ( statusCode?.IsSuccess() == true)
+        severity = MessageSeverity.Info;
       if (parentUri != null)
         Log($"{statusCode} for {uri} in {parentUri}", severity);
       else
@@ -222,7 +241,7 @@ namespace SpiderEngine
         { "script","src" },
         { "link","href" },
         { "img","src" },
-        // TODO : ajouter frame, iframe, meta, form
+        // TODO : add frame, iframe, meta, form, ...
       };
     private static Task<HtmlDocument> GetHtmlDocument(HttpResponseMessage responseMessage, Stream stream)
     {
@@ -230,7 +249,54 @@ namespace SpiderEngine
       doc.Load(stream, Encoding.UTF8);
       return Task<HtmlDocument>.FromResult(doc);
     }
-    private async Task ScanLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
+    private async Task<StyleSheet> ParseCss(List<CrawlStep> steps, Uri uri, string cssContent, CancellationToken cancellationToken)
+    {
+      if (cssContent == null)
+        return null;
+      // TODO follow font files
+      // Note : the parser should not be shared between threads
+      StyleSheet styleSheet = new ExCSS.Parser().Parse(cssContent);
+      String sImageUrl = null;
+      try
+      {
+        foreach (StyleRule rule in styleSheet.StyleRules)
+        {
+          foreach (Property property in rule.Declarations)
+          {
+            PrimitiveTerm primitiveTerm = property.Term as PrimitiveTerm;
+            if (primitiveTerm != null && property.Name == "background-image")
+            {
+              if (primitiveTerm.ToString().Contains("url"))
+              {
+                sImageUrl = primitiveTerm.Value.ToString();
+                Uri derivedImageUrl = uri.GetDerivedUri(sImageUrl);
+                if (!ScanResults.ContainsKey(derivedImageUrl))
+                {
+                  HttpStatusCode? status = await Process(new List<CrawlStep>(steps), uri: derivedImageUrl, pageContainsLink: false, cancellationToken: cancellationToken, processChildrenLinks: false);
+                }
+              }
+            }
+          }
+        }
+      }
+      catch (Exception ex)
+      {
+        Log($"Error checking css in {uri}, exception is {ex}", MessageSeverity.Error);
+      }
+      return styleSheet;
+    }
+
+    private async Task ProcessEmbededCss(List<CrawlStep> steps, Uri uri, HtmlDocument doc, CancellationToken cancellationToken)
+    {
+      HtmlNode documentNode = doc.DocumentNode;
+      IEnumerable<HtmlNode> styleTags = documentNode.Descendants("style");
+      foreach (var styleTag in styleTags)
+      {
+        String cssContent = styleTag.InnerHtml;
+        await this.ParseCss(steps, uri, cssContent, cancellationToken);
+      }
+    }
+    private async Task ScanHtmlLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
     {
       // Pour obtenir l'encodage
       // Attention si on avance le curseur, on ne peut plus lire le flux

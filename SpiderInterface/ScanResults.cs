@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
 namespace SpiderInterface
 {
-  public class ScanResults
+  public class ScanResults : IEnumerable<KeyValuePair<Uri, ScanResult>>
   {
+
     private ReaderWriterLockSlim slimLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
     private Dictionary<Uri, ScanResult> results { get; set; } = new Dictionary<Uri, ScanResult>();
@@ -80,6 +82,17 @@ namespace SpiderInterface
       {
         slimLock.ExitReadLock();
       }
+    }
+    public IEnumerator<KeyValuePair<Uri, ScanResult>> GetEnumerator()
+    {
+      foreach (var sr in results)
+      {
+        yield return sr;
+      }
+    }
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+      return ((IEnumerable<KeyValuePair<Uri, ScanResult>>)this).GetEnumerator();
     }
   }
 }
