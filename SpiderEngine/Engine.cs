@@ -16,16 +16,11 @@ using ExCSS;
 
 // TODO checker qu'une page ne pointe pas sur elle même
 
-// Gérer les liens vers autre CSS 
-
 // Faire des warning sur les redirection, pb d'expiration header
 
-// TODO  CSS inlined in page not parsed versus CSS linked to is parsed
 // TODO UsedImagesChecker should use list of images from Engine.ScanResults instead of building own list
 
 // TODO Check ico links
-
-// DONE Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site :pas utile le warmup a lieu avec des head
 
 namespace SpiderEngine
 {
@@ -74,19 +69,29 @@ namespace SpiderEngine
     }
     private async Task Init(CancellationToken cancellationToken)
     {
+      var extensionsWithSuccessfulInit = new List<ISpiderExtension>();
       Log($"Starting crawl at {DateTime.Now}", MessageSeverity.Info);
-      foreach (var extension in config.Extensions)
-        extension.CancellationToken = cancellationToken;
       stopwatch.Start();
       foreach (var extension in Extensions)
       {
         Task t = await Task.Factory.StartNew(
           async () =>
           {
-            await extension.Init();
+            try
+            {
+              await extension.Init();
+              extensionsWithSuccessfulInit.Add(extension);
+            }
+            catch (Exception ex)
+            {
+              Log($"Init error with extension {extension.GetType()} {ex}", MessageSeverity.Error);
+            }
           }
         );
       }
+      Extensions = extensionsWithSuccessfulInit;
+      foreach (var extension in Extensions)
+        extension.CancellationToken = cancellationToken;
     }
     private async Task Done()
     {
@@ -95,7 +100,14 @@ namespace SpiderEngine
         Task t = await Task.Factory.StartNew(
           async () =>
           {
-            await extension.Done();
+            try
+            {
+              await extension.Done();
+            }
+            catch (Exception ex)
+            {
+              Log($"End error with extension {extension.GetType()} {ex}", MessageSeverity.Error);
+            }
           }
         );
       }
