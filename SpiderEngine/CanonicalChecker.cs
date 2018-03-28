@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using ExCSS;
+using HtmlAgilityPack;
 using SpiderInterface;
 using System;
 using System.Collections.Generic;
@@ -22,7 +23,12 @@ namespace SpiderEngine
     {
       return Task<int>.FromResult(0);
     }
-    public Task Process(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
+
+    public Task ProcessCss(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, StyleSheet styleSheet)
+    {
+      return Task.FromResult<int>(0);
+    }
+    public Task ProcessHtml(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
       if (!isStillInSite)
@@ -73,6 +79,11 @@ namespace SpiderEngine
         Console.WriteLine($"No canonical link in page {uri}");
         Console.ForegroundColor = ConsoleColor.White;
       }
+      return Task.FromResult<int>(0);
+    }
+
+    public Task ProcessOther(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage)
+    {
       return Task.FromResult<int>(0);
     }
   }

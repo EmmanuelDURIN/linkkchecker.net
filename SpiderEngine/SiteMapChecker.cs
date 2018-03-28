@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using ExCSS;
+using HtmlAgilityPack;
 using SpiderInterface;
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,7 @@ namespace SpiderEngine
       }
       return Task<int>.FromResult(0);
     }
-    public Task Process(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
+    public Task ProcessHtml(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       return Task.FromResult<int>(0);
     }
@@ -53,6 +54,16 @@ namespace SpiderEngine
             Engine.Log($"Sitemap url not ok {pageUrl}", MessageSeverity.Error);
         }
       }
+    }
+
+    public Task ProcessCss(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, StyleSheet styleSheet)
+    {
+      return Task.FromResult<int>(0);
+    }
+
+    public Task ProcessOther(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage)
+    {
+      return Task.FromResult<int>(0);
     }
   }
 }

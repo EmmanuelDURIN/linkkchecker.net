@@ -2,6 +2,8 @@
   "imagesBaseDirectory": "C:\\temp\\empreintepaysagere\\EmpreintePaysagere\\images",
   "sitePrefixToRemove": "images",
   "sitesToScan": [
-    "empreintepaysagere-cdn.azureedge.net"
+    "empreinte-paysagere-test.azurewebsites.net",
+    "empreintepaysagere-cdn.azureedge.net",
+    "empreintepaysagere-test-cdn.azureedge.net"
   ]
 }

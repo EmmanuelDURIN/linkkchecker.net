@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using ExCSS;
+using HtmlAgilityPack;
 using Newtonsoft.Json;
 using SpiderInterface;
 using System;
@@ -29,7 +30,6 @@ namespace SpiderEngine
       public String[] SitesToScan { get; set; }
     }
     private UsedImagesCheckerConfig config;
-    private List<String> requestedImages = new List<String>();
     private static String[] imageTypes = { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/tiff" };
     private static String[] imageExtensions = { "jpeg", "jpg", "png", "gif", "tiff" };
     private bool isConfigured = false;
@@ -62,12 +62,8 @@ namespace SpiderEngine
       }
       return Task<int>.FromResult(0);
     }
-    public Task Process(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
+    public Task ProcessHtml(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
-      String contentType = responseMessage.Content.Headers.ContentType.MediaType;
-      bool isImage = imageTypes.Contains(contentType.ToLower());
-      if (isImage && config.SitesToScan.Contains(uri.DnsSafeHost))
-        requestedImages.Add(uri.ToString());
       return Task.FromResult<int>(0);
     }
     public Task Done()
@@ -77,14 +73,14 @@ namespace SpiderEngine
 
       List<String> filesOnDisk = new List<String>();
       FindImageFiles(config.ImagesBaseDirectory, config.ImagesBaseDirectory, filesOnDisk);
-
-      var filesInSite = requestedImages
-                                      .Select(n => new Uri(n).LocalPath)
-                                      .Where(n => n.StartsWith("/" + config.SitePrefixToRemove))
-                                      .Select(n => n.Substring(config.SitePrefixToRemove.Length + 1))
-                                      .Select(n => n.Replace(oldChar: '/', newChar: '\\'))
-                                      .ToList();
-
+      List<String> filesInSite = null;
+        filesInSite = Engine.ScanResults
+                                  .Where(sr => IsImageInteresting(uri: sr.Key, scanResult: sr.Value))
+                                  .Select(sr => sr.Key.LocalPath)
+                                  .Where(n => n.StartsWith("/" + config.SitePrefixToRemove))
+                                  .Select(n => n.Substring(config.SitePrefixToRemove.Length + 1))
+                                  .Select(n => n.Replace(oldChar: '/', newChar: '\\'))
+                                  .ToList();
       var filesNotUsedInSite = filesOnDisk.Except(filesInSite).OrderBy(f => f).ToList();
 
       Engine.Log($"\n*********************************************************", MessageSeverity.Success);
@@ -126,7 +122,12 @@ namespace SpiderEngine
       Engine.Log($"*********************************************************\n", MessageSeverity.Success);
       return Task<int>.FromResult(0);
     }
-
+    private bool IsImageInteresting(Uri uri, ScanResult scanResult)
+    {
+      bool isImage = imageTypes.Contains(scanResult.ContentType?.ToLower());
+      bool doesImageBelongToRightSite = config.SitesToScan.Contains(uri.DnsSafeHost);
+      return isImage && doesImageBelongToRightSite;
+    }
     private void DisplayFiles(string label, List<string> files)
     {
       if (files.Count > 0)
@@ -151,6 +152,14 @@ namespace SpiderEngine
       {
         FindImageFiles(imagesBaseDirectory, Path.Combine(directoryToScan, dir), filesOnDisk);
       }
+    }
+    public Task ProcessCss(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, StyleSheet styleSheet)
+    {
+      return Task.FromResult<int>(0);
+    }
+    public Task ProcessOther(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage)
+    {
+      return Task.FromResult<int>(0);
     }
   }
 }
