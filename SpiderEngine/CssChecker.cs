@@ -13,7 +13,7 @@ namespace SpiderEngine
   internal class CssChecker
   {
     internal Engine Engine { get; set; }
-    private Regex urlExtractor = new Regex(@"url\('?([^']+)'?\)", RegexOptions.ECMAScript);
+    private Regex urlExtractor = new Regex(@"url\('?([^']+)'?\)", RegexOptions.ECMAScript |RegexOptions.Compiled);
 
     internal async Task<StyleSheet> ParseCss(List<CrawlStep> steps, Uri uri, string cssContent, CancellationToken cancellationToken)
     {
@@ -55,7 +55,7 @@ namespace SpiderEngine
               Uri absoluteFontUrl = uri.GetDerivedUri(relativeFontUrl);
               if (!Engine.ScanResults.ContainsKey(absoluteFontUrl))
               {
-                HttpStatusCode? status = await Engine.Process(new List<CrawlStep>(steps), uri: absoluteFontUrl, pageContainsLink: false, cancellationToken: cancellationToken, processChildrenLinks: false);
+                HttpStatusCode? status = await Engine.Process(steps, uri: absoluteFontUrl, pageContainsLink: false, cancellationToken: cancellationToken, processChildrenLinks: false);
               }
             }
           }
@@ -77,7 +77,7 @@ namespace SpiderEngine
               Uri derivedImageUrl = uri.GetDerivedUri(primitiveTerm.Value.ToString());
               if (!Engine.ScanResults.ContainsKey(derivedImageUrl))
               {
-                HttpStatusCode? status = await Engine.Process(new List<CrawlStep>(steps), uri: derivedImageUrl, pageContainsLink: false, cancellationToken: cancellationToken, processChildrenLinks: false);
+                HttpStatusCode? status = await Engine.Process(steps, uri: derivedImageUrl, pageContainsLink: false, cancellationToken: cancellationToken, processChildrenLinks: false);
               }
             }
           }

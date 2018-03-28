@@ -14,14 +14,13 @@ using ExCSS;
 
 // TODO Extension : Collecter les stats Google Page Speed Insights
 
-// TODO checker qu'une page ne pointe pas sur elle même
-
 // Faire des warning sur les redirection, pb d'expiration header
-
-// TODO UsedImagesChecker should use list of images from Engine.ScanResults instead of building own list
 
 // TODO Check ico links
 
+// TODO Make separate reports for each extension
+
+// TODO provide configuration files outside of project
 namespace SpiderEngine
 {
   public class Engine : IEngine
@@ -71,7 +70,7 @@ namespace SpiderEngine
       await Init(cancellationToken);
       try
       {
-        await Process(new List<CrawlStep>(), uri: Config.StartUri, pageContainsLink: true, cancellationToken: cancellationToken);
+        await Process(steps : null, uri: Config.StartUri, pageContainsLink: true, cancellationToken: cancellationToken);
       }
       catch (TaskCanceledException)
       {
@@ -142,16 +141,16 @@ namespace SpiderEngine
     /// <returns>true if page is found</returns>
     public async Task<HttpStatusCode?> Process(List<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true)
     {
+      if (!CheckSupportedUri(uri))
+        return null;
+
+      HttpStatusCode? statusCode = null;
+      steps = GetSafeSteps(steps );
+      steps.Add(new CrawlStep { Uri = uri });
+
       Uri parentUri = null;
       if (steps.Count > 1)
         parentUri = steps[steps.Count - 2].Uri;
-
-      HttpStatusCode? statusCode = null;
-      // Make a copy to be thread safe
-      steps = new List<CrawlStep>(steps);
-      steps.Add(new CrawlStep { Uri = uri });
-      if (!CheckSupportedUri(uri))
-        return null;
       try
       {
         ScanResult scanResult = null;
@@ -203,6 +202,17 @@ namespace SpiderEngine
       }
       return statusCode;
     }
+    public void LogException(Exception ex, Uri parentUri, Uri uri)
+    {
+      ExceptionLogger?.Invoke(ex, parentUri, uri);
+    }
+    /// <summary>
+    /// Make a copy to be thread safe
+    /// </summary>
+    private List<CrawlStep> GetSafeSteps(List<CrawlStep> steps)
+    {
+      return steps == null ? new List<CrawlStep>() : new List<CrawlStep>(steps);
+    }
     private async Task ApplyExtensions(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, StyleSheet styleSheet)
     {
       foreach (var extension in Extensions)
@@ -227,7 +237,6 @@ namespace SpiderEngine
         );
       }
     }
-
     private async Task<HttpResponseMessage> RequestDocument(Uri uri, bool pageContainsLink, CancellationToken cancellationToken)
     {
       HttpClient client = new HttpClient();
@@ -239,7 +248,6 @@ namespace SpiderEngine
       //Log($"\tRequested  {method} {uri}" + uri, MessageSeverity.Debug);
       return responseMessage;
     }
-
     public void LogResult(Uri uri, Uri parentUri, HttpStatusCode? statusCode)
     {
       MessageSeverity severity = MessageSeverity.Error;
@@ -336,10 +344,6 @@ namespace SpiderEngine
           await t;
         }
       }
-    }
-    public void LogException(Exception ex, Uri parentUri, Uri uri)
-    {
-      ExceptionLogger?.Invoke(ex, parentUri, uri);
     }
   }
 }
