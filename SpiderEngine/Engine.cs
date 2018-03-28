@@ -31,13 +31,22 @@ namespace SpiderEngine
 {
   public class Engine : IEngine
   {
+    private CssChecker cssChecker;
     public ScanResults ScanResults { get; set; } = new ScanResults();
     public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
     public Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
     public Uri BaseUri { get; set; }
     public Action<String, MessageSeverity> Log { get; set; }
+    private static List<string> supportedSchemes = new List<string> { "http", "https" };
+    private static Dictionary<string, string> tags2Attribute = new Dictionary<string, string>
+      {
+        { "a","href" },
+        { "script","src" },
+        { "link","href" },
+        { "img","src" },
+        // TODO : add frame, iframe, meta, form, ...
+      };
     private EngineConfig config;
-
     public EngineConfig Config
     {
       get => config;
@@ -54,6 +63,12 @@ namespace SpiderEngine
         }
       }
     }
+
+    public Engine()
+    {
+      cssChecker = new CssChecker { Engine = this };
+    }
+
     private Stopwatch stopwatch = new Stopwatch();
     public async Task Start(CancellationToken cancellationToken)
     {
@@ -154,7 +169,7 @@ namespace SpiderEngine
 
             StyleSheet styleSheet = null;
             if (contentType == "text/css")
-              styleSheet = await ParseCss(steps, uri, await responseMessage.Content.ReadAsStringAsync(), cancellationToken);
+              styleSheet = await cssChecker.ParseCss(steps, uri, await responseMessage.Content.ReadAsStringAsync(), cancellationToken);
 
             await ApplyExtensions(steps, uri, responseMessage, doc, styleSheet);
 
@@ -234,58 +249,12 @@ namespace SpiderEngine
       }
       return true;
     }
-    private static List<string> supportedSchemes = new List<string> { "http", "https" };
-    private static Dictionary<string, string> tags2Attribute = new Dictionary<string, string>
-      {
-        { "a","href" },
-        { "script","src" },
-        { "link","href" },
-        { "img","src" },
-        // TODO : add frame, iframe, meta, form, ...
-      };
     private static Task<HtmlDocument> GetHtmlDocument(HttpResponseMessage responseMessage, Stream stream)
     {
       HtmlDocument doc = new HtmlDocument();
       doc.Load(stream, Encoding.UTF8);
       return Task<HtmlDocument>.FromResult(doc);
     }
-    private async Task<StyleSheet> ParseCss(List<CrawlStep> steps, Uri uri, string cssContent, CancellationToken cancellationToken)
-    {
-      if (cssContent == null)
-        return null;
-      // TODO follow font files
-      // Note : the parser should not be shared between threads
-      StyleSheet styleSheet = new ExCSS.Parser().Parse(cssContent);
-      String sImageUrl = null;
-      try
-      {
-        foreach (StyleRule rule in styleSheet.StyleRules)
-        {
-          foreach (Property property in rule.Declarations)
-          {
-            PrimitiveTerm primitiveTerm = property.Term as PrimitiveTerm;
-            if (primitiveTerm != null && property.Name == "background-image")
-            {
-              if (primitiveTerm.ToString().Contains("url"))
-              {
-                sImageUrl = primitiveTerm.Value.ToString();
-                Uri derivedImageUrl = uri.GetDerivedUri(sImageUrl);
-                if (!ScanResults.ContainsKey(derivedImageUrl))
-                {
-                  HttpStatusCode? status = await Process(new List<CrawlStep>(steps), uri: derivedImageUrl, pageContainsLink: false, cancellationToken: cancellationToken, processChildrenLinks: false);
-                }
-              }
-            }
-          }
-        }
-      }
-      catch (Exception ex)
-      {
-        Log($"Error checking css in {uri}, exception is {ex}", MessageSeverity.Error);
-      }
-      return styleSheet;
-    }
-
     private async Task ProcessEmbededCss(List<CrawlStep> steps, Uri uri, HtmlDocument doc, CancellationToken cancellationToken)
     {
       HtmlNode documentNode = doc.DocumentNode;
@@ -293,7 +262,7 @@ namespace SpiderEngine
       foreach (var styleTag in styleTags)
       {
         String cssContent = styleTag.InnerHtml;
-        await this.ParseCss(steps, uri, cssContent, cancellationToken);
+        await cssChecker.ParseCss(steps, uri, cssContent, cancellationToken);
       }
     }
     private async Task ScanHtmlLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
@@ -328,7 +297,6 @@ namespace SpiderEngine
         await Task.WhenAll(tasks);
       }
     }
-
     private async Task ProcessLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
     {
       bool mayContainLink = link.Name.ToLower() == "a";

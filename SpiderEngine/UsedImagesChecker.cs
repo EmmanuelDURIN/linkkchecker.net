@@ -102,7 +102,7 @@ namespace SpiderEngine
           if (filesNotInProject.Any())
           {
             Engine.Log("No File missing in project with case insensitive comparisons, but ...", MessageSeverity.Error);
-            DisplayFiles("Files NOT in project with case sentive comparison", filesNotInProject);
+            DisplayFiles("Files NOT in project with case sensitive comparison", filesNotInProject);
           }
         }
         else
@@ -113,7 +113,7 @@ namespace SpiderEngine
           if (filesNotUsedInSite.Any())
           {
             Engine.Log("No File not used in site with case insensitive comparisons, but ...", MessageSeverity.Error);
-            DisplayFiles("Files NOT used in site with case sentive comparison", filesNotInProject);
+            DisplayFiles("Files NOT used in site with case sensitive comparison", filesNotInProject);
           }
         }
         else
@@ -139,7 +139,6 @@ namespace SpiderEngine
         }
       }
     }
-
     private void FindImageFiles(string imagesBaseDirectory, string directoryToScan, List<string> filesOnDisk)
     {
       filesOnDisk.AddRange(
