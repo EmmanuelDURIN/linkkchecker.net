@@ -101,19 +101,19 @@ namespace SpiderEngine
         {
           if (filesNotInProject.Any())
           {
-            Engine.Log("No File missing in project with case insensitive comparisons, but ...", MessageSeverity.Error);
-            DisplayFiles("Files NOT in project with case sensitive comparison", filesNotInProject);
+            Engine.Log("No File missing in project with case insensitive comparisons, but ...", MessageSeverity.Warn);
+            DisplayFiles("Files NOT in project with case sensitive comparison", filesNotInProject, MessageSeverity.Warn);
           }
         }
         else
-          DisplayFiles("Files NOT in project - case insensitive", filesNotInProjectCaseInsentitive);
+          DisplayFiles("Files NOT in project - case insensitive", filesNotInProjectCaseInsentitive, MessageSeverity.Warn);
 
         if (filesNotUsedInSiteCaseInsentitive.Count == 0)
         {
           if (filesNotUsedInSite.Any())
           {
-            Engine.Log("No File not used in site with case insensitive comparisons, but ...", MessageSeverity.Error);
-            DisplayFiles("Files NOT used in site with case sensitive comparison", filesNotInProject);
+            Engine.Log("No File not used in site with case insensitive comparisons, but ...", MessageSeverity.Warn);
+            DisplayFiles("Files NOT used in site with case sensitive comparison", filesNotInProject, MessageSeverity.Warn);
           }
         }
         else
@@ -128,11 +128,11 @@ namespace SpiderEngine
       bool doesImageBelongToRightSite = config.SitesToScan.Contains(uri.DnsSafeHost);
       return isImage && doesImageBelongToRightSite;
     }
-    private void DisplayFiles(string label, List<string> files)
+    private void DisplayFiles(string label, List<string> files, MessageSeverity severity = MessageSeverity.Error)
     {
       if (files.Count > 0)
       {
-        Engine.Log($"{files.Count} {label}", MessageSeverity.Error);
+        Engine.Log($"{files.Count} {label}", severity);
         foreach (var file in files)
         {
           Engine.Log($"\t{file}", MessageSeverity.Info);

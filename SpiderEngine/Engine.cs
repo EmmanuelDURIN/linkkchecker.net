@@ -12,13 +12,19 @@ using System.Threading.Tasks;
 using SpiderInterface;
 using ExCSS;
 
+// TODO retry strategies for HttpClient
+
+// TODO Make separate reports for each extension
+
 // TODO Extension : Collecter les stats Google Page Speed Insights
+
+// TODO : warnings for descriptions with less than 160 chars
+
 
 // Faire des warning sur les redirection, pb d'expiration header
 
 // TODO Check ico links
 
-// TODO Make separate reports for each extension
 
 // TODO provide configuration files outside of project
 namespace SpiderEngine
