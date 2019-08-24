@@ -60,44 +60,34 @@ namespace SpiderEngine
       }
     }
     private Stopwatch stopwatch = new Stopwatch();
-    public async Task Start()
+    public void Start()
         {
       BaseUri = new Uri(Config.StartUri.GetLeftPart(UriPartial.Authority));
-      await Init();
+      Init();
       try
       {
-        await Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageContainsLink: true);
+        Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageContainsLink: true);
       }
       catch (Exception ex)
       {
         LogException(ex, null, BaseUri);
       }
-      await Done();
+      Done();
     }
-    private async Task Init()
+    private void Init()
         {
       Logger($"Starting crawl at {DateTime.Now}", MessageSeverity.Info);
       stopwatch.Start();
       foreach (var extension in Extensions)
       {
-        Task t = await Task.Factory.StartNew(
-          async () =>
-          {
-            await extension.Init();
-          }
-        );
+         extension.Init();
       }
     }
-    private async Task Done()
+    private void Done()
     {
       foreach (var extension in Extensions)
       {
-        Task t = await Task.Factory.StartNew(
-          async () =>
-          {
-            await extension.Done();
-          }
-        );
+        extension.Done();
       }
       stopwatch.Stop();
       Logger($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
@@ -114,11 +104,11 @@ namespace SpiderEngine
     /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
     /// 
     /// <returns>true if page is found</returns>
-    public async Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, bool processChildrenLinks = true)
+    public bool Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, bool processChildrenLinks = true)
         {
       bool result = true;
       // Make a copy to be thread safe
-      steps = new List<CrawlStep>(steps);
+      steps = steps == null ? new List<CrawlStep>() : new List<CrawlStep>(steps);
       steps.Add(new CrawlStep { Uri = uri });
       HttpResponseMessage responseMessage = null;
       if (!CheckSupportedUri(uri))
@@ -146,12 +136,12 @@ namespace SpiderEngine
         HttpClient client = new HttpClient();
         if (pageContainsLink)
         {
-          responseMessage = await client.GetAsync(uri);
+          responseMessage = client.GetAsync(uri).Result;
         }
         else
         {
           HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, uri);
-          responseMessage = await client.SendAsync(request);
+          responseMessage = client.SendAsync(request).Result;
         }
         scanResult.Status = responseMessage.StatusCode;
         HttpStatusCode statusCode = responseMessage.StatusCode;
@@ -167,25 +157,20 @@ namespace SpiderEngine
             bool isStillInSite = this.BaseUri.IsBaseOf(uri);
             String contentType = responseMessage.Content.Headers.ContentType.MediaType;
             bool isHtml = contentType == "text/html";
-            using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
+            using (Stream stream = responseMessage.Content.ReadAsStreamAsync().Result)
             {
               HtmlDocument doc = null;
               if (isHtml)
               {
-                doc = await GetHtmlDocument(responseMessage, stream);
+                doc = GetHtmlDocument(responseMessage, stream);
                 if (isStillInSite && processChildrenLinks)
                 {
-                  await ProcessLinks(steps, uri, responseMessage, doc);
+                  ProcessLinks(steps, uri, responseMessage, doc);
                 }
               }
               foreach (var extension in Extensions)
               {
-                Task t = await Task.Factory.StartNew(
-                  async () =>
-                  {
-                    await extension.Process(steps, uri, responseMessage, doc);
-                  }
-                );
+                    extension.Process(steps, uri, responseMessage, doc);
               }
             }
             //if (isCssLink)
@@ -257,16 +242,16 @@ namespace SpiderEngine
         { "img","src" },
         // TODO : ajouter frame, iframe, meta, form
       };
-    private static Task<HtmlDocument> GetHtmlDocument(HttpResponseMessage responseMessage, Stream stream)
+    private static HtmlDocument GetHtmlDocument(HttpResponseMessage responseMessage, Stream stream)
     {
       HtmlDocument doc = new HtmlDocument();
       doc.Load(stream, Encoding.UTF8);
-      return Task<HtmlDocument>.FromResult(doc);
+      return doc;
     }
-    private async Task ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+    private void ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       // Pour obtenir l'encodage
-      // Attention si on avance le curseur, on ne peut plus lirefP le flux
+      // Attention si on avance le curseur, on ne peut plus lire le flux
       //try
       //{
       //  string encodingName = doc.DocumentNode.Element("html").Element("head").Element("meta").GetAttributeValue("charset", "");
@@ -289,14 +274,12 @@ namespace SpiderEngine
         List<Task> tasks = new List<Task>();
         foreach (var link in links)
         {
-          Task task = ScanLink(steps, uri, attributeName, link);
-          tasks.Add(task);
+          ScanLink(steps, uri, attributeName, link);
         }
-        await Task.WhenAll(tasks);
       }
     }
 
-    private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
+    private void ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
     {
       bool mayContainLink = link.Name.ToLower() == "a";
       //bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("type", "") == "text/css";
@@ -326,13 +309,7 @@ namespace SpiderEngine
         }
         if (!alreadyVisited)
         {
-          Task t = await Task.Factory.StartNew(
-            async () =>
-            {
-                await Process(steps, uri, derivedUri, mayContainLink);
-            }
-          );
-          await t;
+            Process(steps, uri, derivedUri, mayContainLink);
         }
       }
     }

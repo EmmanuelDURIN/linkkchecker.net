@@ -14,6 +14,6 @@ namespace SpiderInterface
     System.Collections.Generic.Dictionary<Uri, ScanResult> ScanResults { get; set; }
 
     void LogException(Exception ex, Uri parentUri, Uri uri);
-    Task<bool> Process(System.Collections.Generic.List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, bool processChildrenLinks = true);
+    bool Process(System.Collections.Generic.List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, bool processChildrenLinks = true);
   }
 }

@@ -13,19 +13,17 @@ namespace SpiderEngine
   public class CanonicalChecker : ISpiderExtension
   {
     public IEngine Engine { get; set; }
-    public Task Done()
+    public void Done()
     {
-      return Task<int>.FromResult(0);
     }
-    public Task Init()
+    public void Init()
     {
-      return Task<int>.FromResult(0);
     }
-    public Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+    public void Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
       if (!isStillInSite)
-        return Task.FromResult<int>(0);
+        return ;
       //bool isCss = contentType == "text/css";
       HtmlNode documentNode = doc.DocumentNode;
       HtmlNode canonicalLink = documentNode.SelectSingleNode("//link[@rel='canonical']");
@@ -73,7 +71,6 @@ namespace SpiderEngine
         Console.WriteLine($"No canonical link in page {uri}");
         Console.ForegroundColor = ConsoleColor.White;
       }
-      return Task.FromResult<int>(0);
     }
   }
 }
