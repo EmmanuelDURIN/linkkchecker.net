@@ -10,7 +10,6 @@ namespace SpiderInterface
   public interface ISpiderExtension
   {
     IEngine Engine { get; set; }
-    CancellationToken CancellationToken { get; set; }
 
     Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc);
     Task Done();

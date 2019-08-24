@@ -13,7 +13,6 @@ namespace SpiderEngine
 {
   public class SiteMapChecker : ISpiderExtension
   {
-    public CancellationToken CancellationToken { get; set; }
     private IEnumerable<String> pageUrls;
     public IEngine Engine { get; set; }
     public Task Init()
@@ -45,7 +44,7 @@ namespace SpiderEngine
         }
         else
         {
-          bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageContainsLink: false, cancellationToken: CancellationToken, processChildrenLinks: false);
+          bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageContainsLink: false, processChildrenLinks: false);
           if (result)
             Engine.Logger($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
           else

@@ -60,16 +60,13 @@ namespace SpiderEngine
       }
     }
     private Stopwatch stopwatch = new Stopwatch();
-    public async Task Start(CancellationToken cancellationToken)
-    {
+    public async Task Start()
+        {
       BaseUri = new Uri(Config.StartUri.GetLeftPart(UriPartial.Authority));
-      await Init(cancellationToken);
+      await Init();
       try
       {
-        await Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageContainsLink: true, cancellationToken: cancellationToken);
-      }
-      catch (TaskCanceledException)
-      {
+        await Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageContainsLink: true);
       }
       catch (Exception ex)
       {
@@ -77,11 +74,9 @@ namespace SpiderEngine
       }
       await Done();
     }
-    private async Task Init(CancellationToken cancellationToken)
-    {
+    private async Task Init()
+        {
       Logger($"Starting crawl at {DateTime.Now}", MessageSeverity.Info);
-      foreach (var extension in config.Extensions)
-        extension.CancellationToken = cancellationToken;
       stopwatch.Start();
       foreach (var extension in Extensions)
       {
@@ -116,11 +111,11 @@ namespace SpiderEngine
     /// <param name="parentUri"></param>
     /// <param name="uri"></param>
     /// <param name="pageContainsLink"></param>
-    /// <param name="cancellationToken"></param>
     /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
+    /// 
     /// <returns>true if page is found</returns>
-    public async Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true)
-    {
+    public async Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, bool processChildrenLinks = true)
+        {
       bool result = true;
       // Make a copy to be thread safe
       steps = new List<CrawlStep>(steps);
@@ -151,12 +146,12 @@ namespace SpiderEngine
         HttpClient client = new HttpClient();
         if (pageContainsLink)
         {
-          responseMessage = await client.GetAsync(uri, cancellationToken);
+          responseMessage = await client.GetAsync(uri);
         }
         else
         {
           HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, uri);
-          responseMessage = await client.SendAsync(request, cancellationToken);
+          responseMessage = await client.SendAsync(request);
         }
         scanResult.Status = responseMessage.StatusCode;
         HttpStatusCode statusCode = responseMessage.StatusCode;
@@ -180,7 +175,7 @@ namespace SpiderEngine
                 doc = await GetHtmlDocument(responseMessage, stream);
                 if (isStillInSite && processChildrenLinks)
                 {
-                  await ProcessLinks(steps, uri, responseMessage, doc, cancellationToken);
+                  await ProcessLinks(steps, uri, responseMessage, doc);
                 }
               }
               foreach (var extension in Extensions)
@@ -207,7 +202,6 @@ namespace SpiderEngine
             break;
         }
       }
-      catch (TaskCanceledException) { }
       catch (Exception ex)
       {
         LogException(ex, parentUri, uri);
@@ -269,7 +263,7 @@ namespace SpiderEngine
       doc.Load(stream, Encoding.UTF8);
       return Task<HtmlDocument>.FromResult(doc);
     }
-    private async Task ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
+    private async Task ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       // Pour obtenir l'encodage
       // Attention si on avance le curseur, on ne peut plus lirefP le flux
@@ -295,14 +289,14 @@ namespace SpiderEngine
         List<Task> tasks = new List<Task>();
         foreach (var link in links)
         {
-          Task task = ScanLink(steps, uri, attributeName, link, cancellationToken);
+          Task task = ScanLink(steps, uri, attributeName, link);
           tasks.Add(task);
         }
         await Task.WhenAll(tasks);
       }
     }
 
-    private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
+    private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
     {
       bool mayContainLink = link.Name.ToLower() == "a";
       //bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("type", "") == "text/css";
@@ -335,13 +329,7 @@ namespace SpiderEngine
           Task t = await Task.Factory.StartNew(
             async () =>
             {
-              try
-              {
-                await Process(steps, uri, derivedUri, mayContainLink, cancellationToken);
-              }
-              catch (TaskCanceledException)
-              {
-              }
+                await Process(steps, uri, derivedUri, mayContainLink);
             }
           );
           await t;

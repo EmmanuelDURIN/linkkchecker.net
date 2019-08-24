@@ -12,7 +12,6 @@ namespace SpiderEngine
 {
   public class CanonicalChecker : ISpiderExtension
   {
-    public CancellationToken CancellationToken { get; set; }
     public IEngine Engine { get; set; }
     public Task Done()
     {

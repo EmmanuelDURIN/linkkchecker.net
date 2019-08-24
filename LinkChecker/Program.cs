@@ -28,16 +28,7 @@ namespace LinkChecker
         ExceptionLogger = BasicLogger.LogException,
         Logger = BasicLogger.Log
       };
-      CancellationTokenSource cts = new CancellationTokenSource();
-      Task task = engine.Start(cts.Token);
-      Console.WriteLine("Press Ctr+C to Stop");
-      Console.CancelKeyPress += (sender,e) =>
-      {
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("Cancellation");
-        Console.ForegroundColor = ConsoleColor.White;
-        cts.Cancel();
-      };
+      Task task = engine.Start();
       task.Wait();
       Environment.ExitCode = engine.ScanResults.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
     }
