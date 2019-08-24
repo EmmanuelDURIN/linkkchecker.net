@@ -46,7 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
-    <Compile Include="SingleThreadedLogger.cs" />
+    <Compile Include="BasicLogger.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SpiderEngine\SpiderEngine.csproj">

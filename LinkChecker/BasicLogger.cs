@@ -3,23 +3,17 @@ using SpiderInterface;
 
 namespace LinkChecker
 {
-  internal class SingleThreadedLogger
+  internal class BasicLogger
   {
-    private static Object privateLock = new Object();
     internal static void LogException(Exception ex, Uri parentUri, Uri uri)
     {
-      lock (privateLock)
-      {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
         Console.ForegroundColor = ConsoleColor.White;
-      }
     }
 
     internal static void Log(string msg, MessageSeverity severity)
     {
-      lock (privateLock)
-      {
         switch (severity)
         {
           case MessageSeverity.Success:
@@ -39,7 +33,6 @@ namespace LinkChecker
         }
         Console.WriteLine(msg);
         Console.ForegroundColor = ConsoleColor.White;
-      }
     }
   }
 }
