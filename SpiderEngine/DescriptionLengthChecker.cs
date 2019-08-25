@@ -3,6 +3,7 @@ using HtmlAgilityPack;
 using SpiderInterface;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -30,7 +31,7 @@ namespace SpiderEngine
     {
       return Task<int>.FromResult(0);
     }
-    public Task ProcessHtml(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
+    public Task ProcessHtml(Uri uri, ImmutableList<CrawlStep> steps, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
       bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
       if (!isStillInSite)
@@ -66,11 +67,11 @@ namespace SpiderEngine
       }
       return Task<int>.FromResult(0);
     }
-    public Task ProcessCss(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage, StyleSheet styleSheet)
+    public Task ProcessCss(Uri uri, ImmutableList<CrawlStep> steps, HttpResponseMessage responseMessage, StyleSheet styleSheet)
     {
       return Task.FromResult<int>(0);
     }
-    public Task ProcessOther(Uri uri, List<CrawlStep> steps, HttpResponseMessage responseMessage)
+    public Task ProcessOther(Uri uri, ImmutableList<CrawlStep> steps, HttpResponseMessage responseMessage)
     {
       return Task.FromResult<int>(0);
     }

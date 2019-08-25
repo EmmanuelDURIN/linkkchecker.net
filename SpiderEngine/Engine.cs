@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SpiderInterface;
 using ExCSS;
+using System.Collections.Immutable;
 
 // TODO retry strategies for HttpClient
 
@@ -76,7 +77,7 @@ namespace SpiderEngine
       await Init(cancellationToken);
       try
       {
-        await Process(steps : null, uri: Config.StartUri, pageContainsLink: true, cancellationToken: cancellationToken);
+        await Process(steps : ImmutableList<CrawlStep>.Empty, uri: Config.StartUri, pageContainsLink: true, cancellationToken: cancellationToken);
       }
       catch (TaskCanceledException)
       {
@@ -145,14 +146,13 @@ namespace SpiderEngine
     /// <param name="cancellationToken"></param>
     /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
     /// <returns>true if page is found</returns>
-    public async Task<HttpStatusCode?> Process(List<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true)
+    public async Task<HttpStatusCode?> Process(ImmutableList<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true)
     {
       if (!CheckSupportedUri(uri))
         return null;
 
       HttpStatusCode? statusCode = null;
-      steps = GetSafeSteps(steps );
-      steps.Add(new CrawlStep { Uri = uri });
+      steps = steps.Add(new CrawlStep { Uri = uri });
 
       Uri parentUri = null;
       if (steps.Count > 1)
@@ -215,11 +215,7 @@ namespace SpiderEngine
     /// <summary>
     /// Make a copy to be thread safe
     /// </summary>
-    private List<CrawlStep> GetSafeSteps(List<CrawlStep> steps)
-    {
-      return steps == null ? new List<CrawlStep>() : new List<CrawlStep>(steps);
-    }
-    private async Task ApplyExtensions(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, StyleSheet styleSheet)
+    private async Task ApplyExtensions(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, StyleSheet styleSheet)
     {
       foreach (var extension in Extensions)
       {
@@ -281,7 +277,7 @@ namespace SpiderEngine
       doc.Load(stream, Encoding.UTF8);
       return Task<HtmlDocument>.FromResult(doc);
     }
-    private async Task ProcessEmbededCss(List<CrawlStep> steps, Uri uri, HtmlDocument doc, CancellationToken cancellationToken)
+    private async Task ProcessEmbededCss(ImmutableList<CrawlStep> steps, Uri uri, HtmlDocument doc, CancellationToken cancellationToken)
     {
       HtmlNode documentNode = doc.DocumentNode;
       IEnumerable<HtmlNode> styleTags = documentNode.Descendants("style");
@@ -291,7 +287,7 @@ namespace SpiderEngine
         await cssChecker.ParseCss(steps, uri, cssContent, cancellationToken);
       }
     }
-    private async Task ScanHtmlLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
+    private async Task ScanHtmlLinks(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc, CancellationToken cancellationToken)
     {
       // Pour obtenir l'encodage
       // Attention si on avance le curseur, on ne peut plus lire le flux
@@ -323,7 +319,7 @@ namespace SpiderEngine
         await Task.WhenAll(tasks);
       }
     }
-    private async Task ProcessLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
+    private async Task ProcessLink(ImmutableList<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
     {
       bool mayContainLink = link.Name.ToLower() == "a";
       bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("rel", "") == "stylesheet";
