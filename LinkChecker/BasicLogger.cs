@@ -3,7 +3,7 @@ using SpiderInterface;
 
 namespace LinkChecker
 {
-  internal class SingleThreadedLogger
+  internal class BasicLogger
   {
     private static Object privateLock = new Object();
     internal static void LogException(Exception ex, Uri parentUri, Uri uri)

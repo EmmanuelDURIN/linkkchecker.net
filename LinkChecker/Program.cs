@@ -25,8 +25,8 @@ namespace LinkChecker
       }
       Engine engine = new Engine {
         Config = config ,
-        ExceptionLogger = SingleThreadedLogger.LogException,
-        Log = SingleThreadedLogger.Log
+        ExceptionLogger = BasicLogger.LogException,
+        Log = BasicLogger.Log
       };
       CancellationTokenSource cts = new CancellationTokenSource();
       Task task = engine.Start(cts.Token);
