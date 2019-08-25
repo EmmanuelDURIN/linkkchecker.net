@@ -2,6 +2,7 @@
 using SpiderInterface;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -15,7 +16,7 @@ namespace SpiderEngine
     internal Engine Engine { get; set; }
     private Regex urlExtractor = new Regex(@"url\('?([^']+)'?\)", RegexOptions.ECMAScript |RegexOptions.Compiled);
 
-    internal async Task<StyleSheet> ParseCss(List<CrawlStep> steps, Uri uri, string cssContent, CancellationToken cancellationToken)
+    internal async Task<StyleSheet> ParseCss(ImmutableList<CrawlStep> steps, Uri uri, string cssContent, CancellationToken cancellationToken)
     {
       // TIP : embeded Css could be prevented from rescanning with computed hash 
       if (cssContent == null)
@@ -34,7 +35,7 @@ namespace SpiderEngine
       }
       return styleSheet;
     }
-    private async Task CheckFonts(List<CrawlStep> steps, Uri uri, StyleSheet styleSheet, CancellationToken cancellationToken)
+    private async Task CheckFonts(ImmutableList<CrawlStep> steps, Uri uri, StyleSheet styleSheet, CancellationToken cancellationToken)
     {
       //@font - face {
       //  font - family: 'RalewayMedium';
@@ -63,7 +64,7 @@ namespace SpiderEngine
       }
     }
 
-    private async Task CheckBackgroundUrls(List<CrawlStep> steps, Uri uri, StyleSheet styleSheet, CancellationToken cancellationToken)
+    private async Task CheckBackgroundUrls(ImmutableList<CrawlStep> steps, Uri uri, StyleSheet styleSheet, CancellationToken cancellationToken)
     {
       foreach (StyleRule rule in styleSheet.StyleRules)
       {

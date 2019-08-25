@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace SpiderInterface
     List<ISpiderExtension> Extensions { get; set; }
     Action<string, MessageSeverity> Log { get; set; }
     ScanResults ScanResults { get; set; } 
-    Task<HttpStatusCode?> Process(List<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true);
+    Task<HttpStatusCode?> Process(ImmutableList<CrawlStep> steps, Uri uri, bool pageContainsLink, CancellationToken cancellationToken, bool processChildrenLinks = true);
     void LogResult(Uri uri, Uri parentUri, HttpStatusCode? statusCode);
   }
 }

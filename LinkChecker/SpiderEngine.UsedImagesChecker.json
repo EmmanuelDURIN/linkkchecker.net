@@ -1,5 +1,5 @@
 ﻿{
-  "imagesBaseDirectory": "C:\\temp\\empreintepaysagere\\EmpreintePaysagere\\images",
+  "imagesBaseDirectory": "C:\\Documents\\source\\empreintepaysagere\\EmpreintePaysagere\\images",
   "sitePrefixToRemove": "images",
   "sitesToScan": [
     "empreinte-paysagere-test.azurewebsites.net",

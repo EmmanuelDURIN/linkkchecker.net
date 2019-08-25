@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -8,95 +9,43 @@ namespace SpiderInterface
 {
     public class ScanResults : IEnumerable<KeyValuePair<Uri, ScanResult>>
     {
-
-        private ReaderWriterLockSlim scanResultsLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-
-        private Dictionary<Uri, ScanResult> results { get; set; } = new Dictionary<Uri, ScanResult>();
+        private ConcurrentDictionary<Uri, ScanResult> results { get; set; } = new ConcurrentDictionary<Uri, ScanResult>();
         public int FailureCount { get => results.Count(sr => (sr.Value.Status != null && sr.Value.Status.Value.IsSuccess()) || sr.Value.Exception != null); }
         public bool TryGetScanResult(Uri uri, out ScanResult scanResult)
         {
-            bool result;
-            scanResultsLock.EnterUpgradeableReadLock();
-            try
-            {
-                if (!(result = results.ContainsKey(uri)))
-                {
-                    scanResult = new ScanResult();
-                    try
-                    {
-                        scanResultsLock.EnterWriteLock();
-                        results.Add(uri, scanResult);
-                    }
-                    finally
-                    {
-                        scanResultsLock.ExitWriteLock();
-                    }
-                }
-                else
-                {
-                    scanResult = results[uri];
-                }
-            }
-            finally
-            {
-                scanResultsLock.ExitUpgradeableReadLock();
-            }
-            return result;
+            return results.TryGetValue(uri, out scanResult);
         }
-
-        public void Replace(Uri uri, ScanResult scanResult)
-        {
-            scanResultsLock.EnterWriteLock();
-            try
-            {
-                if (results.ContainsKey(uri))
-                {
-                    results.Remove(uri);
-                }
-                results.Add(uri, scanResult);
-            }
-            finally
-            {
-                scanResultsLock.ExitWriteLock();
-            }
-        }
+        //public void Replace(Uri uri, ScanResult scanResult)
+        //{
+        //    scanResultsLock.EnterWriteLock();
+        //    try
+        //    {
+        //        if (results.ContainsKey(uri))
+        //        {
+        //            results.Remove(uri);
+        //        }
+        //        results.Add(uri, scanResult);
+        //    }
+        //    finally
+        //    {
+        //        scanResultsLock.ExitWriteLock();
+        //    }
+        //}
         public void AddOrReplace(Uri uri, ScanResult scanResult)
         {
-            scanResultsLock.EnterWriteLock();
-            try
-            {
-                if (results.ContainsKey(uri))
-                {
-                    results[uri] = scanResult;
-                }
-                else
-                {
-                    results.Add(uri, scanResult);
-                }
-            }
-            finally
-            {
-                scanResultsLock.ExitWriteLock();
-            }
+            results.AddOrUpdate(
+                key: uri, 
+                addValueFactory: uriKey => scanResult,
+                updateValueFactory: (key,oldValue) => scanResult
+                );
         }
         public bool ContainsKey(Uri uri)
         {
-            scanResultsLock.EnterReadLock();
-            try
-            {
-                return results.ContainsKey(uri);
-            }
-            finally
-            {
-                scanResultsLock.ExitReadLock();
-            }
+            return results.ContainsKey(uri);
         }
         public IEnumerator<KeyValuePair<Uri, ScanResult>> GetEnumerator()
         {
-            foreach (var sr in results)
-            {
-                yield return sr;
-            }
+            return results.GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
         {
