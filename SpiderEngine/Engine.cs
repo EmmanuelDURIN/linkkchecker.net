@@ -47,6 +47,7 @@ namespace SpiderEngine
                 config = value;
                 if (config != null)
                 {
+                    // load extensions when config is set
                     foreach (var extension in config.Extensions)
                     {
                         extension.Engine = this;
@@ -62,7 +63,7 @@ namespace SpiderEngine
             Init();
             try
             {
-                Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageContainsLink: true);
+                Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageMayContainsLink: true);
             }
             catch (Exception ex)
             {
@@ -93,20 +94,21 @@ namespace SpiderEngine
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="steps"></param>
-        /// <param name="parentUri"></param>
-        /// <param name="uri"></param>
-        /// <param name="pageContainsLink"></param>
+        /// <param name="steps">Stack of the previously visited uri</param>
+        /// <param name="parentUri">The referrer uri = the uri from which we arrive on the current uri</param>
+        /// <param name="uri">Current uri to process for existence and inside links</param>
+        /// <param name="pageMayContainsLink">Indication if the current page may contains some link.
+        /// If true page is dowloaded. If false, content of page is not downloaded, but existence of page is checked.
+        /// It prevents downloading all images of a web site.</param>
         /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
         /// 
         /// <returns>true if page is found</returns>
-        public bool Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageContainsLink, bool processChildrenLinks = true)
+        public bool Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
         {
             bool result = true;
             // Make a copy to be thread safe
             steps = steps == null ? new List<CrawlStep>() : new List<CrawlStep>(steps);
             steps.Add(new CrawlStep { Uri = uri });
-            HttpResponseMessage responseMessage = null;
             if (!CheckSupportedUri(uri))
                 return false;
             try
@@ -124,7 +126,8 @@ namespace SpiderEngine
                 }
 
                 HttpClient client = new HttpClient();
-                if (pageContainsLink)
+                HttpResponseMessage responseMessage;
+                if (pageMayContainsLink)
                 {
                     responseMessage = client.GetAsync(uri).Result;
                 }
@@ -142,7 +145,7 @@ namespace SpiderEngine
                 switch (status)
                 {
                     case int s when s >= 200 && s < 300:
-                        if (!pageContainsLink)
+                        if (!pageMayContainsLink)
                             break;
                         bool isStillInSite = this.BaseUri.IsBaseOf(uri);
                         String contentType = responseMessage.Content.Headers.ContentType.MediaType;
@@ -211,13 +214,13 @@ namespace SpiderEngine
         }
         private static List<string> supportedSchemes = new List<string> { "http", "https" };
         private static Dictionary<string, string> tags2Attribute = new Dictionary<string, string>
-      {
-        { "a","href" },
-        { "script","src" },
-        { "link","href" },
-        { "img","src" },
-        // TODO : ajouter frame, iframe, meta, form
-      };
+        {
+            { "a","href" },
+            { "script","src" },
+            { "link","href" },
+            { "img","src" },
+            // TODO : ajouter frame, iframe, meta, form
+        };
         private static HtmlDocument GetHtmlDocument(HttpResponseMessage responseMessage, Stream stream)
         {
             HtmlDocument doc = new HtmlDocument();

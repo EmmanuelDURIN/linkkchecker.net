@@ -42,7 +42,7 @@ namespace SpiderEngine
         }
         else
         {
-          bool result = Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageContainsLink: false, processChildrenLinks: false);
+          bool result = Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false);
           if (result)
             Engine.Logger($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
           else
