@@ -24,6 +24,8 @@ namespace SpiderEngine
       bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
       if (!isStillInSite)
         return ;
+      if (responseMessage.Content.Headers.ContentType.MediaType != "text/html")
+        return ;
       //bool isCss = contentType == "text/css";
       HtmlNode documentNode = doc.DocumentNode;
       HtmlNode canonicalLink = documentNode.SelectSingleNode("//link[@rel='canonical']");
