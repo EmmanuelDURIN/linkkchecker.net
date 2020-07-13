@@ -28,7 +28,7 @@ namespace LinkChecker
         ExceptionLogger = BasicLogger.LogException,
         Logger = BasicLogger.Log
       };
-      engine.Start();
+      engine.Start().Wait();
       Environment.ExitCode = engine.ScanResults.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
     }
   }

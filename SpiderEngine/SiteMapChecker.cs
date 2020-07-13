@@ -15,7 +15,7 @@ namespace SpiderEngine
   {
     private IEnumerable<String> pageUrls;
     public IEngine Engine { get; set; }
-    public void Init()
+    public Task Init()
     {
       try
       {
@@ -27,11 +27,13 @@ namespace SpiderEngine
       {
         Engine.Logger($"Error loading/reading sitemap.xml {ex.Message}", MessageSeverity.Error);
       }
+      return Task.FromResult(0);
     }
-    public void Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+    public Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
     {
+      return Task.FromResult(0);
     }
-    public void Done()
+    public async Task Done()
     {
       foreach (string pageUrl in pageUrls)
       {
@@ -42,7 +44,7 @@ namespace SpiderEngine
         }
         else
         {
-          bool result = Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false);
+          bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false);
           if (result)
             Engine.Logger($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
           else
