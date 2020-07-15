@@ -11,7 +11,6 @@ namespace LinkChecker
         Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
         Console.ForegroundColor = ConsoleColor.White;
     }
-
     internal static void Log(string msg, MessageSeverity severity)
     {
         switch (severity)

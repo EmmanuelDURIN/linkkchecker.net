@@ -263,7 +263,7 @@ namespace SpiderEngine
             bool mayContainLink = link.Name.ToLower() == "a";
             //bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("type", "") == "text/css";
             //mayContainLink |= isCssLink;
-            String ATTR_DEFAULT_VALUE = "";
+            string ATTR_DEFAULT_VALUE = "";
             string attributeValue = link.GetAttributeValue(attributeName, def: ATTR_DEFAULT_VALUE);
             if (attributeValue != ATTR_DEFAULT_VALUE)
             {
@@ -276,10 +276,15 @@ namespace SpiderEngine
                 {
                     derivedUri = new Uri(uri, attributeValue);
                 }
-                bool alreadyVisited = false;
-                alreadyVisited = this.ScanResults.ContainsKey(derivedUri);
+                bool alreadyVisited = this.ScanResults.ContainsKey(derivedUri);
                 if (!alreadyVisited)
                 {
+                    if (Config.OnlyCheckInnerLinks)
+                    {
+                        bool isStillInSite = this.BaseUri.IsBaseOf(derivedUri);
+                        if (!isStillInSite)
+                            return;
+                    }
                     Process(steps, uri, derivedUri, mayContainLink);
                 }
             }

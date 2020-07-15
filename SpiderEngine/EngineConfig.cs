@@ -3,70 +3,65 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace SpiderEngine
 {
-  public class EngineConfig
-  {
-    private string[] args;
-    public List<ISpiderExtension> Extensions { get; internal set; } = new List<ISpiderExtension>();
-    public List<String> Errors { get; set; } = new List<String>();
-    public Uri StartUri { get; internal set; }
-
-    public EngineConfig(string[] args)
+    public class EngineConfig
     {
-      this.args = args;
-
-      LoadExtensions();
-    }
-
-    private void LoadExtensions()
-    {
-      string fileName = "extensions.txt";
-      if (File.Exists(fileName))
-      {
-        try
+        private string[] args;
+        public List<ExtensionInfo> ExtensionList { get; set; }
+        public List<ISpiderExtension> Extensions { get; internal set; } = new List<ISpiderExtension>();
+        public List<String> Errors { get; set; } = new List<String>();
+        public bool OnlyCheckInnerLinks { get; set; }
+        public Uri StartUri { get; set; }
+        public static EngineConfig Deserialize(string[] args)
         {
-          var lines = File.ReadAllLines(fileName);
-          foreach (var line in lines)
-          {
-            try
-            {
-              String[] tokens = line.Split(',');
-              String assemblyPath = tokens[1];
-              String extensionName = tokens[0];
-              if (!Path.IsPathRooted(assemblyPath))
-              {
-                assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyPath);
-              }
-              Assembly extensionAssembly = Assembly.LoadFile(assemblyPath);
-              ISpiderExtension extension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
-              Extensions.Add(extension);
-            }
-            catch (Exception ex)
-            {
-              Errors.Add($"Error {ex.Message} reading extension config file line is {line}");
-            }
-          }
+            string json = File.ReadAllText(@"LinkChecker.json");
+            var engineConfig = JsonConvert.DeserializeObject<EngineConfig>(json);
+            engineConfig.LoadExtensions();
+            return engineConfig;
         }
-        catch (Exception ex)
+        private void LoadExtensions()
         {
-          Errors.Add($"Error {ex.Message} reading file {fileName}");
+            foreach (ExtensionInfo extensionInfo in ExtensionList)
+            {
+                string assemblyPath = extensionInfo.Assembly;
+                string extensionName = extensionInfo.Class;
+                try
+                {
+                    try
+                    {
+                        if (!Path.IsPathRooted(assemblyPath))
+                        {
+                            assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyPath);
+                        }
+                        Assembly extensionAssembly = Assembly.LoadFile(assemblyPath);
+                        ISpiderExtension extension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
+                        Extensions.Add(extension);
+                    }
+                    catch (Exception ex)
+                    {
+                        Errors.Add($"Error {ex.Message} loading extension {extensionName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Errors.Add($"Error {ex.Message} reading file {extensionName}");
+                }
+            }
         }
-      }
+        public bool EnsureCorrect()
+        {
+            if (StartUri==null)
+            {
+                Errors.Add("No url provided");
+                return false;
+            }
+            string startUri = StartUri.ToString();
+            if ( !startUri.StartsWith("http://") && !startUri.StartsWith("https://"))
+                StartUri = new Uri("http://" + startUri);
+            return true;
+        }
     }
-    public bool EnsureCorrect()
-    {
-      if (args.Length < 1)
-      {
-        Errors.Add("No url provided");
-        return false;
-      }
-      if (args[0].StartsWith("http://") || args[0].StartsWith("https://"))
-        StartUri = new Uri(args[0]);
-      else
-        StartUri = new Uri("http://"+ args[0]);
-      return true;
-    }
-  }
 }

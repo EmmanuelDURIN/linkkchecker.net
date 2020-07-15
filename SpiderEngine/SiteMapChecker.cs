@@ -4,16 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 
 namespace SpiderEngine
 {
-  public class SiteMapChecker : ISpiderExtension
+    public class SiteMapChecker : ISpiderExtension
   {
-    private IEnumerable<String> pageUrls;
+    private IEnumerable<string> pageUrls = new List<string>();
     public IEngine Engine { get; set; }
     public void Init()
     {

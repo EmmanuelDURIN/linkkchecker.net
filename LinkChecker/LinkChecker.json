@@ -1,0 +1,14 @@
+{
+  "onlyCheckInnerLinks": true,
+  "startUri": "http://localhost:2965/Paysagiste",
+  "extensionList": [
+    {
+      "class": "SpiderEngine.CanonicalChecker",
+      "assembly": "SpiderEngine.dll"
+    },
+    {
+      "class":"SpiderEngine.SiteMapChecker",
+      "assembly": "SpiderEngine.dll"
+    }
+  ]
+}

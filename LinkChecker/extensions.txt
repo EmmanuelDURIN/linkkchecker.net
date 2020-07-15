@@ -1,2 +1,0 @@
-﻿SpiderEngine.CanonicalChecker,SpiderEngine.dll
-SpiderEngine.SiteMapChecker,SpiderEngine.dll
