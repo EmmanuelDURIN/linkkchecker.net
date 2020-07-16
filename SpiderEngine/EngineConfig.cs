@@ -9,7 +9,6 @@ namespace SpiderEngine
 {
     public class EngineConfig
     {
-        private string[] args;
         public List<ExtensionInfo> ExtensionList { get; set; }
         public List<ISpiderExtension> Extensions { get; internal set; } = new List<ISpiderExtension>();
         public List<String> Errors { get; set; } = new List<String>();

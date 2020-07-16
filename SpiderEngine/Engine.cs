@@ -57,13 +57,13 @@ namespace SpiderEngine
             }
         }
         private Stopwatch stopwatch = new Stopwatch();
-        public void Start()
+        public async Task Start()
         {
             BaseUri = new Uri(Config.StartUri.GetLeftPart(UriPartial.Authority));
             Init();
             try
             {
-                Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageMayContainsLink: true);
+                await Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageMayContainsLink: true);
             }
             catch (Exception ex)
             {
@@ -103,7 +103,7 @@ namespace SpiderEngine
         /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
         /// 
         /// <returns>true if page is found</returns>
-        public bool Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
+        public async Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
         {
             bool result = true;
             // Make a copy to be thread safe
@@ -158,12 +158,12 @@ namespace SpiderEngine
                                 doc = GetHtmlDocument(responseMessage, stream);
                                 if (isStillInSite && processChildrenLinks)
                                 {
-                                    ProcessLinks(steps, uri, responseMessage, doc);
+                                    await ProcessLinks(steps, uri, responseMessage, doc);
                                 }
                             }
                             foreach (var extension in Extensions)
                             {
-                                extension.Process(steps, uri, responseMessage, doc);
+                                await extension.Process(steps, uri, responseMessage, doc);
                             }
                         }
                         //if (isCssLink)
@@ -227,7 +227,7 @@ namespace SpiderEngine
             doc.Load(stream, Encoding.UTF8);
             return doc;
         }
-        private void ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+        private async Task ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
         {
             // Pour obtenir l'encodage
             // Attention si on avance le curseur, on ne peut plus lire le flux
@@ -253,12 +253,12 @@ namespace SpiderEngine
                 List<Task> tasks = new List<Task>();
                 foreach (var link in links)
                 {
-                    ScanLink(steps, uri, attributeName, link);
+                    await ScanLink(steps, uri, attributeName, link);
                 }
             }
         }
 
-        private void ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
+        private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
         {
             bool mayContainLink = link.Name.ToLower() == "a";
             //bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("type", "") == "text/css";
@@ -285,7 +285,7 @@ namespace SpiderEngine
                         if (!isStillInSite)
                             return;
                     }
-                    Process(steps, uri, derivedUri, mayContainLink);
+                    await Process(steps, uri, derivedUri, mayContainLink);
                 }
             }
         }
