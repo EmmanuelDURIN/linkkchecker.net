@@ -125,16 +125,19 @@ namespace SpiderEngine
                     scanResult = this.ScanResults[uri];
                 }
 
-                HttpClient client = new HttpClient();
                 HttpResponseMessage responseMessage;
-                if (pageMayContainsLink)
+                using (HttpClient client = new HttpClient())
                 {
-                    responseMessage = client.GetAsync(uri).Result;
-                }
-                else
-                {
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, uri);
-                    responseMessage = client.SendAsync(request).Result;
+
+                    if (pageMayContainsLink)
+                    {
+                        responseMessage = await client.GetAsync(uri);
+                    }
+                    else
+                    {
+                        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, uri);
+                        responseMessage = await client.SendAsync(request);
+                    }
                 }
                 scanResult.Status = responseMessage.StatusCode;
                 HttpStatusCode statusCode = responseMessage.StatusCode;
@@ -148,9 +151,9 @@ namespace SpiderEngine
                         if (!pageMayContainsLink)
                             break;
                         bool isStillInSite = this.BaseUri.IsBaseOf(uri);
-                        String contentType = responseMessage.Content.Headers.ContentType.MediaType;
+                        string contentType = responseMessage.Content.Headers.ContentType.MediaType;
                         bool isHtml = contentType == "text/html";
-                        using (Stream stream = responseMessage.Content.ReadAsStreamAsync().Result)
+                        using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
                         {
                             HtmlDocument doc = null;
                             if (isHtml)
@@ -247,8 +250,8 @@ namespace SpiderEngine
             HtmlNode documentNode = doc.DocumentNode;
             foreach (var pair in tags2Attribute)
             {
-                String tagName = pair.Key;
-                String attributeName = pair.Value;
+                string tagName = pair.Key;
+                string attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
                 List<Task> tasks = new List<Task>();
                 foreach (var link in links)
@@ -285,7 +288,7 @@ namespace SpiderEngine
                         if (!isStillInSite)
                             return;
                     }
-                    await Process(steps, uri, derivedUri, mayContainLink);
+                    await Task.Run( async () => await Process(steps, uri, derivedUri, mayContainLink) );
                 }
             }
         }

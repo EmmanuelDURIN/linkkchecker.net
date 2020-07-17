@@ -42,7 +42,16 @@ namespace SpiderEngine
         }
         else
         {
-          bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false);
+          bool result = await Task.Run( 
+            async() => await Engine.Process
+                (
+                    steps: null, 
+                    parentUri: null, 
+                    uri: uriToCheck, 
+                    pageMayContainsLink: false, 
+                    processChildrenLinks: false
+                )
+          );
           if (result)
             Engine.Logger($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
           else
