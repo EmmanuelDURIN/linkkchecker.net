@@ -20,8 +20,8 @@ namespace LinkChecker
             Engine engine = new Engine
             {
                 Config = config,
-                ExceptionLogger = BasicLogger.LogException,
-                Logger = BasicLogger.Log
+                ExceptionLogger = SingleThreadedLogger.LogException,
+                Logger = SingleThreadedLogger.Log
             };
             engine.Start().Wait();
             Environment.ExitCode = engine.ScanResults.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
