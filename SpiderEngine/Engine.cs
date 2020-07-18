@@ -153,7 +153,7 @@ namespace SpiderEngine
                         bool isStillInSite = this.BaseUri.IsBaseOf(uri);
                         string contentType = responseMessage.Content.Headers.ContentType.MediaType;
                         bool isHtml = contentType == "text/html";
-                        using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
+                        using (Stream stream = await responseMessage.Content.ReadAsStreamAsync()) 
                         {
                             HtmlDocument doc = null;
                             if (isHtml)
@@ -166,7 +166,7 @@ namespace SpiderEngine
                             }
                             foreach (var extension in Extensions)
                             {
-                                await extension.Process(steps, uri, responseMessage, doc);
+                                Task _ = Task.Run ( async () => await extension.Process(steps, uri, responseMessage, doc));
                             }
                         }
                         //if (isCssLink)
