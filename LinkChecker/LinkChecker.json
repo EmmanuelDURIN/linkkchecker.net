@@ -1,5 +1,5 @@
 {
-  "onlyCheckInnerLinks": true,
+  "onlyCheckInnerLinks": false,
   "startUri": "http://localhost:2965/Paysagiste",
   "extensionList": [
     {
