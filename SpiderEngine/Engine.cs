@@ -32,7 +32,7 @@ namespace SpiderEngine
 {
     public class Engine : IEngine
     {
-        public Dictionary<Uri, ScanResult> ScanResults { get; set; } = new Dictionary<Uri, ScanResult>();
+        public ScanResults ScanResults { get; set; } = new ScanResults();
         public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
         public Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
         public Action<String, MessageSeverity> Logger { get; set; }
