@@ -67,5 +67,22 @@ namespace SpiderInterface
         {
             get { return results.Count; }
         }
+        public ScanResult FindOrAdd(Uri uri, Func<ScanResult> factory)
+        {
+            lock (innerLock)
+            {
+                ScanResult scanResult;
+                if (!results.ContainsKey(uri))
+                {
+                    scanResult = factory();
+                    results.Add(uri, scanResult);
+                }
+                else
+                {
+                    scanResult = results[uri];
+                }
+                return scanResult;
+            }
+        }
     }
 }

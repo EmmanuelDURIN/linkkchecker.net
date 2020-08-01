@@ -114,17 +114,8 @@ namespace SpiderEngine
             try
             {
                 ScanResult scanResult = null;
-
-                if (!this.ScanResults.ContainsKey(uri))
-                {
-                    scanResult = new ScanResult();
-                    this.ScanResults.Add(uri, scanResult);
-                }
-                else
-                {
-                    scanResult = this.ScanResults[uri];
-                }
-
+                scanResult = this.ScanResults.FindOrAdd(uri, () => new ScanResult());
+        
                 HttpResponseMessage responseMessage;
                 using (HttpClient client = new HttpClient())
                 {
