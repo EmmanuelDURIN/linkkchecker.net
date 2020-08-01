@@ -183,13 +183,7 @@ namespace SpiderEngine
             catch (Exception ex)
             {
                 LogException(ex, parentUri, uri);
-
-                if (this.ScanResults.ContainsKey(uri))
-                {
-                    this.ScanResults.Remove(uri);
-                    this.ScanResults.Add(uri, new ScanResult { Exception = ex });
-                }
-
+                this.ScanResults[uri] = new ScanResult { Exception = ex };
             }
             return result;
         }
