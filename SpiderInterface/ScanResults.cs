@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace SpiderInterface
 {
@@ -15,6 +16,21 @@ namespace SpiderInterface
             {
                 results.Add(key, value);
             }
+            //bool lockTaken = false;
+            //int count = 1;
+            //do
+            //{
+            //    lockTaken = Monitor.TryEnter(innerLock, millisecondsTimeout: 0);
+            //    if (!lockTaken)
+            //    {
+            //        Console.ForegroundColor = ConsoleColor.Yellow;
+            //        Console.WriteLine("lock not acquired " + count);
+            //        Console.ForegroundColor = ConsoleColor.White;
+            //        count++;
+            //    }
+            //} while (!lockTaken);
+            //results.Add(key, value);
+            //Monitor.Exit(innerLock);
         }
         public bool Remove(Uri key)
         {
@@ -25,6 +41,22 @@ namespace SpiderInterface
         }
         public bool ContainsKey(Uri key)
         {
+            //bool lockTaken = false;
+            //int count = 1;
+            //do
+            //{
+            //    lockTaken = Monitor.TryEnter(innerLock, millisecondsTimeout: 1);
+            //    if (!lockTaken)
+            //    {
+            //        Console.ForegroundColor = ConsoleColor.Yellow;
+            //        Console.WriteLine("lock not acquired " + count);
+            //        Console.ForegroundColor = ConsoleColor.White;
+            //        count++;
+            //    }
+            //} while (!lockTaken);
+            //bool containsKey = results.ContainsKey(key);
+            //Monitor.Exit(innerLock);
+            //return containsKey;
             lock (innerLock)
             {
                 return results.ContainsKey(key);
