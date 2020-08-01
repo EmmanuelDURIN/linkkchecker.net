@@ -2,6 +2,8 @@
 using SpiderInterface;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -18,9 +20,10 @@ namespace SpiderEngine
         {
             return Task.FromResult(0);
         }
-        public Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+        public Task Process(ImmutableStack<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
         {
-            bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
+            Uri firstVisitedUri = steps.Last().Uri;
+            bool isStillInSite = firstVisitedUri.IsBaseOf(uri);
             if (!isStillInSite)
                 return Task.FromResult(0);
             if (responseMessage.Content.Headers.ContentType.MediaType != "text/html")

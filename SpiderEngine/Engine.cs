@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using SpiderInterface;
+using System.Collections.Immutable;
 
 
 
@@ -63,7 +64,7 @@ namespace SpiderEngine
             Init();
             try
             {
-                await Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageMayContainsLink: true);
+                await Process(ImmutableStack<CrawlStep>.Empty, parentUri: null, uri: Config.StartUri, pageMayContainsLink: true);
             }
             catch (Exception ex)
             {
@@ -103,12 +104,11 @@ namespace SpiderEngine
         /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
         /// 
         /// <returns>true if page is found</returns>
-        public async Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
+        public async Task<bool> Process(ImmutableStack<CrawlStep> oldSteps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
         {
             bool result = true;
-            // Make a copy to be thread safe
-            steps = steps == null ? new List<CrawlStep>() : new List<CrawlStep>(steps);
-            steps.Add(new CrawlStep { Uri = uri });
+
+            ImmutableStack<CrawlStep> steps = oldSteps == null ? ImmutableStack<CrawlStep>.Empty : oldSteps.Push(new CrawlStep { Uri = uri });
             if (!CheckSupportedUri(uri))
                 return false;
             try
@@ -215,7 +215,7 @@ namespace SpiderEngine
             doc.Load(stream, Encoding.UTF8);
             return doc;
         }
-        private async Task ProcessLinks(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+        private async Task ProcessLinks(ImmutableStack<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
         {
             // Pour obtenir l'encodage
             // Attention si on avance le curseur, on ne peut plus lire le flux
@@ -246,7 +246,7 @@ namespace SpiderEngine
             }
         }
 
-        private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
+        private async Task ScanLink(ImmutableStack<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
         {
             bool mayContainLink = link.Name.ToLower() == "a";
             //bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("type", "") == "text/css";

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Net.Http;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
@@ -11,7 +12,7 @@ namespace SpiderInterface
         IEngine Engine { get; set; }
 
         Task Init();
-        Task Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc);
+        Task Process(ImmutableStack<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc);
         Task Done();
     }
 }
