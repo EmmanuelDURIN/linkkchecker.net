@@ -9,30 +9,29 @@ namespace LinkChecker
     {
         private static ConcurrentExclusiveSchedulerPair schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, maxConcurrencyLevel: 1);
         private static TaskScheduler exclusiveScheduler = schedulerPair.ExclusiveScheduler;
+        private static TaskFactory exclusiveTaskFactory;
 
         static SingleThreadedLogger()
         {
             exclusiveScheduler = schedulerPair.ExclusiveScheduler;
+            exclusiveTaskFactory = new TaskFactory(exclusiveScheduler);
         }
         internal static void LogException(Exception ex, Uri parentUri, Uri uri)
         {
-            Task.Factory.StartNew
+            exclusiveTaskFactory.StartNew
                 (
-                        () =>
-                        {
-                            Console.WriteLine($"Execution of log on thread {Thread.CurrentThread.ManagedThreadId}");
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
-                            Console.ForegroundColor = ConsoleColor.White;
-                        },
-                        CancellationToken.None,
-                        TaskCreationOptions.None,
-                        exclusiveScheduler
+                    () =>
+                    {
+                        Console.WriteLine($"Execution of log on thread {Thread.CurrentThread.ManagedThreadId}");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
                 );
         }
         internal static void Log(string msg, MessageSeverity severity)
         {
-            Task.Factory.StartNew
+            exclusiveTaskFactory.StartNew
             (
                 () =>
                 {
@@ -56,10 +55,7 @@ namespace LinkChecker
                     }
                     Console.WriteLine(msg);
                     Console.ForegroundColor = ConsoleColor.White;
-                },
-                CancellationToken.None,
-                TaskCreationOptions.None,
-                exclusiveScheduler
+                }
             );
         }
     }
