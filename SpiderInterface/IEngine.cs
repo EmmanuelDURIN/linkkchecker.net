@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace SpiderInterface
         Action<string, MessageSeverity> Logger { get; set; }
         void LogException(Exception ex, Uri parentUri, Uri uri);
         List<ISpiderExtension> Extensions { get; set; }
-        ScanResults ScanResults { get; set; }
+        ConcurrentDictionary<Uri, ScanResult> ScanResults { get; set; }
         Task<bool> Process(ImmutableStack<CrawlStep> steps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true);
     }
 }

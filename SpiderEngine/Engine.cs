@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SpiderInterface;
 using System.Collections.Immutable;
+using System.Collections.Concurrent;
 
 
 
@@ -33,7 +34,7 @@ namespace SpiderEngine
 {
     public class Engine : IEngine
     {
-        public ScanResults ScanResults { get; set; } = new ScanResults();
+        public ConcurrentDictionary<Uri, ScanResult> ScanResults { get; set; } = new ConcurrentDictionary<Uri, ScanResult>();
         public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
         public Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
         public Action<String, MessageSeverity> Logger { get; set; }
@@ -114,8 +115,8 @@ namespace SpiderEngine
             try
             {
                 ScanResult scanResult = null;
-                scanResult = this.ScanResults.FindOrAdd(uri, () => new ScanResult());
-        
+                scanResult = this.ScanResults.GetOrAdd(uri, uri => new ScanResult());
+
                 HttpResponseMessage responseMessage;
                 using (HttpClient client = new HttpClient())
                 {
@@ -144,7 +145,7 @@ namespace SpiderEngine
                         bool isStillInSite = this.BaseUri.IsBaseOf(uri);
                         string contentType = responseMessage.Content.Headers.ContentType.MediaType;
                         bool isHtml = contentType == "text/html";
-                        using (Stream stream = await responseMessage.Content.ReadAsStreamAsync()) 
+                        using (Stream stream = await responseMessage.Content.ReadAsStreamAsync())
                         {
                             HtmlDocument doc = null;
                             if (isHtml)
@@ -157,7 +158,7 @@ namespace SpiderEngine
                             }
                             foreach (var extension in Extensions)
                             {
-                                Task _ = Task.Run ( async () => await extension.Process(steps, uri, responseMessage, doc));
+                                Task _ = Task.Run(async () => await extension.Process(steps, uri, responseMessage, doc));
                             }
                         }
                         //if (isCssLink)
@@ -192,7 +193,12 @@ namespace SpiderEngine
             string scheme = uri.Scheme;
             if (!supportedSchemes.Contains(scheme.ToLower()))
             {
-                this.ScanResults.Add(uri, new ScanResult { IsUnsupportedScheme = true });
+                this.ScanResults.AddOrUpdate
+                    (
+                    key: uri,
+                    addValueFactory: key => new ScanResult { IsUnsupportedScheme = true },
+                    updateValueFactory: (key, oldValue) => new ScanResult { IsUnsupportedScheme = true }
+                    );
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"Unsupported scheme {scheme} for {uri}");
                 Console.ForegroundColor = ConsoleColor.White;
@@ -273,7 +279,7 @@ namespace SpiderEngine
                         if (!isStillInSite)
                             return;
                     }
-                    await Task.Run( async () => await Process(steps, uri, derivedUri, mayContainLink) );
+                    await Task.Run(async () => await Process(steps, uri, derivedUri, mayContainLink));
                 }
             }
         }
