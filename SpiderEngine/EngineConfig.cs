@@ -30,36 +30,33 @@ namespace SpiderEngine
                 string extensionName = extensionInfo.Class;
                 try
                 {
-                    try
+                    if (!Path.IsPathRooted(assemblyPath))
                     {
-                        if (!Path.IsPathRooted(assemblyPath))
-                        {
-                            assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyPath);
-                        }
-                        Assembly extensionAssembly = Assembly.LoadFile(assemblyPath);
-                        ISpiderExtension extension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
+                        assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyPath);
+                    }
+                    Assembly extensionAssembly = Assembly.LoadFile(assemblyPath);
+                    var untypedExtension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
+                    ISpiderExtension extension = untypedExtension as ISpiderExtension;
+                    if (extension != null)
                         Extensions.Add(extension);
-                    }
-                    catch (Exception ex)
-                    {
-                        Errors.Add($"Error {ex.Message} loading extension {extensionName}");
-                    }
+                    else
+                        throw new Exception("Error loading extension");
                 }
                 catch (Exception ex)
                 {
-                    Errors.Add($"Error {ex.Message} reading file {extensionName}");
+                    Errors.Add($"Error {ex.Message} loading extension {extensionName}");
                 }
             }
         }
         public bool EnsureCorrect()
         {
-            if (StartUri==null)
+            if (StartUri == null)
             {
                 Errors.Add("No url provided");
                 return false;
             }
             string startUri = StartUri.ToString();
-            if ( !startUri.StartsWith("http://") && !startUri.StartsWith("https://"))
+            if (!startUri.StartsWith("http://") && !startUri.StartsWith("https://"))
                 StartUri = new Uri("http://" + startUri);
             return true;
         }

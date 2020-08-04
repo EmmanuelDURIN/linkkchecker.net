@@ -7,7 +7,7 @@
       "assembly": "SpiderEngine.dll"
     },
     {
-      "class":"SpiderEngine.SiteMapChecker",
+      "class": "SpiderEngine.SiteMapChecker",
       "assembly": "SpiderEngine.dll"
     }
   ]

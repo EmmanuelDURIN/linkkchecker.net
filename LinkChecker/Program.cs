@@ -26,6 +26,9 @@ namespace LinkChecker
             };
             engine.Start();
             Environment.ExitCode = engine.ScanResults.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
+
+            Console.WriteLine("Press any key to continue");
+            Console.ReadKey();
         }
     }
 }
