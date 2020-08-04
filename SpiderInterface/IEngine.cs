@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SpiderInterface
@@ -12,6 +13,6 @@ namespace SpiderInterface
         void LogException(Exception ex, Uri parentUri, Uri uri);
         List<ISpiderExtension> Extensions { get; set; }
         Dictionary<Uri, ScanResult> ScanResults { get; set; }
-        Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true);
+        Task<bool> Process(List<CrawlStep> steps, Uri parentUri, Uri uri, CancellationToken cancellationToken, bool pageMayContainsLink, bool processChildrenLinks = true);
     }
 }

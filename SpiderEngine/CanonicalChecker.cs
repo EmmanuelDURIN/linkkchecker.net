@@ -3,12 +3,14 @@ using SpiderInterface;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SpiderEngine
 {
     public class CanonicalChecker : ISpiderExtension
     {
+        public CancellationToken CancellationToken { get; set; }
         public IEngine Engine { get; set; }
         public Task Done()
         {

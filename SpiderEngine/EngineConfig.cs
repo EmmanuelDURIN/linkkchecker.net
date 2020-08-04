@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace SpiderEngine
 {
@@ -23,42 +24,43 @@ namespace SpiderEngine
         }
         private void LoadExtensions()
         {
-            foreach (ExtensionInfo extensionInfo in ExtensionList)
-            {
-                string assemblyPath = extensionInfo.Assembly;
-                string extensionName = extensionInfo.Class;
-                try
+            if (ExtensionList != null && ExtensionList.Any())
+                foreach (ExtensionInfo extensionInfo in ExtensionList)
                 {
+                    string assemblyPath = extensionInfo.Assembly;
+                    string extensionName = extensionInfo.Class;
                     try
                     {
-                        if (!Path.IsPathRooted(assemblyPath))
+                        try
                         {
-                            assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyPath);
+                            if (!Path.IsPathRooted(assemblyPath))
+                            {
+                                assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyPath);
+                            }
+                            Assembly extensionAssembly = Assembly.LoadFile(assemblyPath);
+                            ISpiderExtension extension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
+                            Extensions.Add(extension);
                         }
-                        Assembly extensionAssembly = Assembly.LoadFile(assemblyPath);
-                        ISpiderExtension extension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
-                        Extensions.Add(extension);
+                        catch (Exception ex)
+                        {
+                            Errors.Add($"Error {ex.Message} loading extension {extensionName}");
+                        }
                     }
                     catch (Exception ex)
                     {
-                        Errors.Add($"Error {ex.Message} loading extension {extensionName}");
+                        Errors.Add($"Error {ex.Message} reading file {extensionName}");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Errors.Add($"Error {ex.Message} reading file {extensionName}");
-                }
-            }
         }
         public bool EnsureCorrect()
         {
-            if (StartUri==null)
+            if (StartUri == null)
             {
                 Errors.Add("No url provided");
                 return false;
             }
             string startUri = StartUri.ToString();
-            if ( !startUri.StartsWith("http://") && !startUri.StartsWith("https://"))
+            if (!startUri.StartsWith("http://") && !startUri.StartsWith("https://"))
                 StartUri = new Uri("http://" + startUri);
             return true;
         }
