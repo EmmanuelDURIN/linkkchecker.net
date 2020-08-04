@@ -243,17 +243,19 @@ namespace SpiderEngine
             //}
 
             HtmlNode documentNode = doc.DocumentNode;
+            List<Task> tasks = new List<Task>();
             foreach (var pair in tags2Attribute)
             {
                 string tagName = pair.Key;
                 string attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
-                List<Task> tasks = new List<Task>();
                 foreach (var link in links)
                 {
-                    await ScanLink(steps, uri, attributeName, link);
+                    Task t = ScanLink(steps, uri, attributeName, link);
+                    tasks.Add(t);
                 }
             }
+            await Task.WhenAll(tasks);
         }
 
         private async Task ScanLink(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
