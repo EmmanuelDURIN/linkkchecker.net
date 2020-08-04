@@ -305,19 +305,19 @@ namespace SpiderEngine
             //}
 
             HtmlNode documentNode = doc.DocumentNode;
+            List<Task> tasks = new List<Task>();
             foreach (var pair in tags2Attribute)
             {
                 String tagName = pair.Key;
                 String attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
-                List<Task> tasks = new List<Task>();
                 foreach (var link in links)
                 {
                     Task task = ProcessLink(steps, uri, attributeName, link, cancellationToken);
                     tasks.Add(task);
                 }
-                await Task.WhenAll(tasks);
             }
+            await Task.WhenAll(tasks);
         }
         private async Task ProcessLink(ImmutableList<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link, CancellationToken cancellationToken)
         {
