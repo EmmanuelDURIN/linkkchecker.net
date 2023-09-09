@@ -8,9 +8,7 @@ namespace SpiderEngine
     public class CanonicalChecker : ISpiderExtension
     {
         public IEngine? Engine { get; set; }
-        public void Done()
-        {
-        }
+        public Task Done() => Task.CompletedTask;
         public void Init()
         {
         }

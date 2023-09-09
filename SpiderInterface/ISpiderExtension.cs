@@ -7,6 +7,6 @@ namespace SpiderInterface
         IEngine? Engine { get; set; }
         void Init();
         void Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc);
-        void Done();
+        Task Done();
     }
 }

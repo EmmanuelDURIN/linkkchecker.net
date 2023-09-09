@@ -5,7 +5,7 @@ namespace LinkChecker
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             EngineConfig config = EngineConfig.Deserialize(args);
             if (!config.EnsureCorrect())
@@ -22,7 +22,7 @@ namespace LinkChecker
                 ExceptionLogger = BasicLogger.LogException,
                 Logger = BasicLogger.Log
             };
-            engine.Start();
+            await engine.StartAsync();
             Environment.ExitCode = engine.ScanResults.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
 
             Console.WriteLine("Press any key to continue");

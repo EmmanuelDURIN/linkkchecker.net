@@ -28,7 +28,7 @@ namespace SpiderEngine
         public void Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc)
         {
         }
-        public void Done()
+        public async Task Done()
         {
             ArgumentNullException.ThrowIfNull(Engine);
             foreach (string pageUrl in pageUrls)
@@ -40,7 +40,7 @@ namespace SpiderEngine
                 }
                 else
                 {
-                    bool result = Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false);
+                    bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false);
                     if (result)
                         Engine.Logger?.Invoke($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
                     else
