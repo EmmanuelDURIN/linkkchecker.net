@@ -1,8 +1,6 @@
 ﻿using HtmlAgilityPack;
 using SpiderInterface;
 
-
-
 namespace SpiderEngine
 {
     public class CanonicalChecker : ISpiderExtension

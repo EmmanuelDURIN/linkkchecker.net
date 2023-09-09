@@ -223,14 +223,17 @@ namespace SpiderEngine
                 string tagName = pair.Key;
                 string attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
-                List<Task> tasks = new List<Task>();
-                foreach (var link in links)
-                {
-                    await ScanLinkAsync(steps, uri, attributeName, link);
-                }
+
+                List<Task> tasks = links.Select(link => ScanLinkAsync(steps, uri, attributeName, link)).ToList();
+                // Equivalent à 
+                //List<Task> tasks = new List<Task>();
+                //foreach (var link in links)
+                //{
+                //    tasks.Add(ScanLinkAsync(steps, uri, attributeName, link));
+                //}
+                await Task.WhenAll(tasks);
             }
         }
-
         private async Task ScanLinkAsync(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
         {
             bool mayContainLink = link.Name.ToLower() == "a";
@@ -260,7 +263,7 @@ namespace SpiderEngine
                         if (!isStillInSite)
                             return;
                     }
-                    await Process(steps, uri, derivedUri, mayContainLink);
+                    await Task.Run(async () => await Process(steps, uri, derivedUri, mayContainLink));
                 }
             }
         }
