@@ -2,11 +2,11 @@
 
 namespace SpiderEngine
 {
-  public static class StatusCodeExtension
-  {
-    public static bool IsSuccess( this HttpStatusCode statusCode )
+    public static class StatusCodeExtension
     {
-      return 200 <= (int)statusCode && (int)statusCode < 300;
+        public static bool IsSuccess(this HttpStatusCode statusCode)
+        {
+            return 200 <= (int)statusCode && (int)statusCode < 300;
+        }
     }
-  }
 }

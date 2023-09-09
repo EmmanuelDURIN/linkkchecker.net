@@ -1,6 +1,4 @@
 ﻿using SpiderEngine;
-using System;
-using System.Linq;
 
 
 namespace LinkChecker

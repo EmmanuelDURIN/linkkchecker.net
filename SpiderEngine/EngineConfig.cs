@@ -1,24 +1,21 @@
-﻿using SpiderInterface;
-using System.Collections.Generic;
-using System;
-using System.IO;
+﻿using Newtonsoft.Json;
+using SpiderInterface;
 using System.Reflection;
-using Newtonsoft.Json;
 
 namespace SpiderEngine
 {
     public class EngineConfig
     {
-        private string[] args;
-        public List<ExtensionInfo> ExtensionList { get; set; }
+        public List<ExtensionInfo> ExtensionList { get; set; } = new();
         public List<ISpiderExtension> Extensions { get; internal set; } = new List<ISpiderExtension>();
-        public List<String> Errors { get; set; } = new List<String>();
+        public List<string> Errors { get; set; } = new List<string>();
         public bool OnlyCheckInnerLinks { get; set; }
-        public Uri StartUri { get; set; }
+        public Uri? StartUri { get; set; }
         public static EngineConfig Deserialize(string[] args)
         {
             string json = File.ReadAllText(@"LinkChecker.json");
             var engineConfig = JsonConvert.DeserializeObject<EngineConfig>(json);
+            ArgumentNullException.ThrowIfNull(engineConfig);
             engineConfig.LoadExtensions();
             return engineConfig;
         }
@@ -35,8 +32,7 @@ namespace SpiderEngine
                         assemblyPath = Path.Combine(Environment.CurrentDirectory, assemblyPath);
                     }
                     Assembly extensionAssembly = Assembly.LoadFile(assemblyPath);
-                    var untypedExtension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
-                    ISpiderExtension extension = untypedExtension as ISpiderExtension;
+                    ISpiderExtension? extension = extensionAssembly.CreateInstance(extensionName) as ISpiderExtension;
                     if (extension != null)
                         Extensions.Add(extension);
                     else

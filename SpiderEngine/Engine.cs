@@ -1,32 +1,8 @@
 ﻿using HtmlAgilityPack;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using SpiderInterface;
-
-
-
-// TODO Extension : Collecter les stats Google Page Speed Insights
-
-// TODO : Créer le batch et mettre LinkChecker en repo Github
-
-// Gérer les liens vers les images dans le CSS comme background : url('logo.gif')
-// Gérer les liens vers autre CSS 
-
-// Faire un mode sans Head mais avec des GET réels pour avoir le warmup du site
-
-// Faire des warning sur les redirection, pb d'expiration header
-
-// https
-
-// plugin pour lister les images (trouver les images en trop sur le site ? )
-
-// TODO checker longueurs des descriptions à 160 caractères pour rentrer dans les sitemap de Google
+using System.Diagnostics;
+using System.Net;
+using System.Text;
 
 namespace SpiderEngine
 {
@@ -34,12 +10,12 @@ namespace SpiderEngine
     {
         public Dictionary<Uri, ScanResult> ScanResults { get; set; } = new Dictionary<Uri, ScanResult>();
         public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
-        public Action<Exception, Uri, Uri> ExceptionLogger { get; set; }
-        public Action<String, MessageSeverity> Logger { get; set; }
-        private EngineConfig config;
-        public Uri BaseUri { get; set; }
+        public Action<Exception, Uri?, Uri>? ExceptionLogger { get; set; }
+        public Action<string, MessageSeverity>? Logger { get; set; }
+        public Uri? BaseUri { get; set; }
+        private EngineConfig? config;
 
-        public EngineConfig Config
+        public EngineConfig? Config
         {
             get => config;
             set
@@ -59,11 +35,13 @@ namespace SpiderEngine
         private Stopwatch stopwatch = new Stopwatch();
         public void Start()
         {
-            BaseUri = new Uri(Config.StartUri.GetLeftPart(UriPartial.Authority));
+            Uri? startUri = Config?.StartUri;
+            ArgumentNullException.ThrowIfNull(startUri);
+            BaseUri = new Uri(startUri.GetLeftPart(UriPartial.Authority));
             Init();
             try
             {
-                Process(new List<CrawlStep>(), parentUri: null, uri: Config.StartUri, pageMayContainsLink: true);
+                Process(new List<CrawlStep>(), parentUri: null, uri: startUri, pageMayContainsLink: true);
             }
             catch (Exception ex)
             {
@@ -73,7 +51,7 @@ namespace SpiderEngine
         }
         private void Init()
         {
-            Logger($"Starting crawl at {DateTime.Now}", MessageSeverity.Info);
+            Logger?.Invoke($"Starting crawl at {DateTime.Now}", MessageSeverity.Info);
             stopwatch.Start();
             foreach (var extension in Extensions)
             {
@@ -87,8 +65,8 @@ namespace SpiderEngine
                 extension.Done();
             }
             stopwatch.Stop();
-            Logger($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
-            Logger($"Elapsed Time {stopwatch.Elapsed}", MessageSeverity.Info);
+            Logger?.Invoke($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
+            Logger?.Invoke($"Elapsed Time {stopwatch.Elapsed}", MessageSeverity.Info);
         }
 
         /// <summary>
@@ -103,17 +81,17 @@ namespace SpiderEngine
         /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
         /// 
         /// <returns>true if page is found</returns>
-        public bool Process(List<CrawlStep> steps, Uri parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
+        public bool Process(List<CrawlStep>? steps, Uri? parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
         {
             bool result = true;
             // Make a copy to be thread safe
             steps = steps == null ? new List<CrawlStep>() : new List<CrawlStep>(steps);
-            steps.Add(new CrawlStep { Uri = uri });
+            steps.Add(new CrawlStep(uri));
             if (!CheckSupportedUri(uri))
                 return false;
             try
             {
-                ScanResult scanResult = null;
+                ScanResult? scanResult = null;
 
                 if (!this.ScanResults.ContainsKey(uri))
                 {
@@ -140,19 +118,20 @@ namespace SpiderEngine
                 HttpStatusCode statusCode = responseMessage.StatusCode;
                 result = responseMessage.IsSuccessStatusCode;
                 MessageSeverity severity = responseMessage.IsSuccessStatusCode ? MessageSeverity.Info : MessageSeverity.Error;
-                Logger($"{statusCode} {uri}", severity);
+                Logger?.Invoke($"{statusCode} {uri}", severity);
                 int status = (int)statusCode;
                 switch (status)
                 {
                     case int s when s >= 200 && s < 300:
                         if (!pageMayContainsLink)
                             break;
+                        ArgumentNullException.ThrowIfNull(BaseUri);
                         bool isStillInSite = this.BaseUri.IsBaseOf(uri);
-                        String contentType = responseMessage.Content.Headers.ContentType.MediaType;
+                        string? contentType = responseMessage.Content.Headers.ContentType?.MediaType;
                         bool isHtml = contentType == "text/html";
                         using (Stream stream = responseMessage.Content.ReadAsStreamAsync().Result)
                         {
-                            HtmlDocument doc = null;
+                            HtmlDocument? doc = null;
                             if (isHtml)
                             {
                                 doc = GetHtmlDocument(responseMessage, stream);
@@ -241,8 +220,8 @@ namespace SpiderEngine
             HtmlNode documentNode = doc.DocumentNode;
             foreach (var pair in tags2Attribute)
             {
-                String tagName = pair.Key;
-                String attributeName = pair.Value;
+                string tagName = pair.Key;
+                string attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
                 List<Task> tasks = new List<Task>();
                 foreach (var link in links)
@@ -273,9 +252,11 @@ namespace SpiderEngine
                 bool alreadyVisited = this.ScanResults.ContainsKey(derivedUri);
                 if (!alreadyVisited)
                 {
+                    ArgumentNullException.ThrowIfNull(Config);
                     if (Config.OnlyCheckInnerLinks)
                     {
-                        bool isStillInSite = this.BaseUri.IsBaseOf(derivedUri);
+                        ArgumentNullException.ThrowIfNull(BaseUri);
+                        bool isStillInSite = BaseUri.IsBaseOf(derivedUri);
                         if (!isStillInSite)
                             return;
                     }
@@ -283,7 +264,7 @@ namespace SpiderEngine
                 }
             }
         }
-        public void LogException(Exception ex, Uri parentUri, Uri uri)
+        public void LogException(Exception ex, Uri? parentUri, Uri uri)
         {
             ExceptionLogger?.Invoke(ex, parentUri, uri);
         }
