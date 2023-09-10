@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using SpiderInterface;
+using System.Collections.Immutable;
 using System.Xml.Linq;
 
 
@@ -25,7 +26,7 @@ namespace SpiderEngine
                 Engine.Logger?.Invoke($"Error loading/reading sitemap.xml {ex.Message}", MessageSeverity.Error);
             }
         }
-        public void Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc)
+        public void Process(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc)
         {
         }
         public async Task Done()

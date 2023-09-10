@@ -1,4 +1,6 @@
-﻿namespace SpiderInterface
+﻿using System.Collections.Immutable;
+
+namespace SpiderInterface
 {
     public interface IEngine
     {
@@ -8,6 +10,6 @@
         void LogException(Exception ex, Uri? parentUri, Uri uri);
         List<ISpiderExtension> Extensions { get; set; }
         ScanResultCollection ScanResultCollection { get; set; }
-        Task<bool> Process(List<CrawlStep>? steps, Uri? parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true);
+        Task<bool> Process(ImmutableList<CrawlStep>? steps, Uri? parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true);
     }
 }

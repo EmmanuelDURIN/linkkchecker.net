@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using SpiderInterface;
+using System.Collections.Immutable;
 
 namespace SpiderEngine
 {
@@ -10,7 +11,7 @@ namespace SpiderEngine
         public void Init()
         {
         }
-        public void Process(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc)
+        public void Process(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc)
         {
             bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
             if (!isStillInSite)

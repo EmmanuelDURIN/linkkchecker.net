@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using SpiderInterface;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
@@ -41,7 +42,7 @@ namespace SpiderEngine
             Init();
             try
             {
-                await Process(new List<CrawlStep>(), parentUri: null, uri: startUri, pageMayContainsLink: true);
+                await Process(ImmutableList<CrawlStep>.Empty, parentUri: null, uri: startUri, pageMayContainsLink: true);
             }
             catch (Exception ex)
             {
@@ -81,12 +82,12 @@ namespace SpiderEngine
         /// <param name="processChildrenLinks">Set to true if an extension needs to use the engine to check a link</param>
         /// 
         /// <returns>true if page is found</returns>
-        public async Task<bool> Process(List<CrawlStep>? steps, Uri? parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
+        public async Task<bool> Process(ImmutableList<CrawlStep>? steps, Uri? parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true)
         {
             bool result = true;
             // Make a copy to be thread safe
-            steps = steps == null ? new List<CrawlStep>() : new List<CrawlStep>(steps);
-            steps.Add(new CrawlStep(uri));
+            steps ??= ImmutableList<CrawlStep>.Empty;
+            steps = steps.Add(new CrawlStep(uri));
             if (!CheckSupportedUri(uri))
                 return false;
             try
@@ -189,7 +190,7 @@ namespace SpiderEngine
             doc.Load(stream, Encoding.UTF8);
             return doc;
         }
-        private async Task ProcessLinksAsync(List<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
+        private async Task ProcessLinksAsync(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument doc)
         {
             // Pour obtenir l'encodage
             // Attention si on avance le curseur, on ne peut plus lire le flux
@@ -214,16 +215,10 @@ namespace SpiderEngine
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
 
                 List<Task> tasks = links.Select(link => ScanLinkAsync(steps, uri, attributeName, link)).ToList();
-                // Equivalent à 
-                //List<Task> tasks = new List<Task>();
-                //foreach (var link in links)
-                //{
-                //    tasks.Add(ScanLinkAsync(steps, uri, attributeName, link));
-                //}
                 await Task.WhenAll(tasks);
             }
         }
-        private async Task ScanLinkAsync(List<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
+        private async Task ScanLinkAsync(ImmutableList<CrawlStep> steps, Uri uri, string attributeName, HtmlNode link)
         {
             bool mayContainLink = link.Name.ToLower() == "a";
             //bool isCssLink = link.Name.ToLower() == "link" && link.GetAttributeValue("type", "") == "text/css";
