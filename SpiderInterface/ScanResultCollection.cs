@@ -47,5 +47,18 @@ namespace SpiderInterface
         }
         IEnumerator IEnumerable.GetEnumerator()
             => ((IEnumerable<KeyValuePair<Uri, ScanResult>>)this).GetEnumerator();
+        public ScanResult FindOrAdd(Uri uri, Func<ScanResult> factory)
+        {
+            lock (innerLock)
+            {
+                ScanResult? scanResult;
+                if (!results.TryGetValue(uri, out scanResult))
+                {
+                    scanResult = factory();
+                    results.Add(uri, scanResult);
+                }
+                return scanResult;
+            }
+        }
     }
 }
