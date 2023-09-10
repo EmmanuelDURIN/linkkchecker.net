@@ -4,7 +4,8 @@ namespace LinkChecker
 {
     internal class SingleThreadedLogger
     {
-        private static object logLock = new object();
+        private static ConcurrentExclusiveSchedulerPair schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default,maxConcurrencyLevel:1);
+        private static TaskFactory logTaskFactory = new TaskFactory(schedulerPair.ExclusiveScheduler);
         internal static void LogException(Exception ex, Uri? parentUri, Uri uri)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -20,25 +21,13 @@ namespace LinkChecker
                 MessageSeverity.Warn => ConsoleColor.Yellow,
                 MessageSeverity.Error => ConsoleColor.Red,
                 _ => throw new Exception("Illegal value"),
-                //    break;
-                //case MessageSeverity.Info:
-                //    Console.ForegroundColor = ConsoleColor.White;
-                //    break;
-                //case MessageSeverity.Warn:
-                //    Console.ForegroundColor = ConsoleColor.Yellow;
-                //    break;
-                //case MessageSeverity.Error:
-                //    Console.ForegroundColor = ConsoleColor.Red;
-                //    break;
-                //default:
-                //    break;
             };
-            //lock (logLock)
-            //{
+            logTaskFactory.StartNew( () =>
+            {
                 Console.ForegroundColor = newColor;
                 Console.WriteLine(msg);
                 Console.ForegroundColor = ConsoleColor.White;
-            //}
+            });
         }
     }
 }
