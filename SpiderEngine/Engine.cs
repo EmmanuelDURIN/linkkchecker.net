@@ -8,7 +8,7 @@ namespace SpiderEngine
 {
     public class Engine : IEngine
     {
-        public ScanResultCollection ScanResultCollection { get; set; } = new ();
+        public ScanResultCollection ScanResultCollection { get; set; } = new();
         public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
         public Action<Exception, Uri?, Uri>? ExceptionLogger { get; set; }
         public Action<string, MessageSeverity>? Logger { get; set; }

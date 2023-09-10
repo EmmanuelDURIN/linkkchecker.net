@@ -4,60 +4,100 @@ namespace SpiderInterface
 {
     public class ScanResultCollection : IEnumerable<KeyValuePair<Uri, ScanResult>>
     {
-        private object innerLock = new object();
+        private ReaderWriterLockSlim innerLock = new ReaderWriterLockSlim();
         private Dictionary<Uri, ScanResult> results = new Dictionary<Uri, ScanResult>();
-
         public void Add(Uri key, ScanResult value)
         {
-            lock (innerLock)
+            innerLock.EnterWriteLock();
+            try
             {
                 results.Add(key, value);
+            }
+            finally
+            {
+                innerLock.ExitWriteLock();
             }
         }
         public bool ContainsKey(Uri uriToCheck)
         {
-            lock (innerLock)
+            innerLock.EnterReadLock();
+            try
             {
-                return results.ContainsKey(uriToCheck);
+                bool isFound = results.ContainsKey(uriToCheck);
+                return isFound;
+            }
+            finally
+            {
+                innerLock.ExitReadLock();
             }
         }
         public ScanResult this[Uri key]
         {
             get
             {
-                lock (innerLock)
+                innerLock.EnterReadLock();
+                try
                 {
-                    return results[key];
+                    ScanResult scanResult = results[key];
+                    return scanResult;
+                }
+                finally
+                {
+                    innerLock.ExitReadLock();
                 }
             }
             set
             {
-                lock (innerLock)
+                innerLock.EnterWriteLock();
+                try
                 {
                     results[key] = value;
+                }
+                finally
+                {
+                    innerLock.ExitWriteLock();
                 }
             }
         }
         public IEnumerator<KeyValuePair<Uri, ScanResult>> GetEnumerator()
         {
-            lock (innerLock)
+            innerLock.EnterReadLock();
+            try
             {
-                return results.GetEnumerator();
+                Dictionary<Uri, ScanResult>.Enumerator enumerator = results.GetEnumerator();
+                return enumerator;
+            }
+            finally
+            {
+                innerLock.ExitReadLock();
             }
         }
         IEnumerator IEnumerable.GetEnumerator()
             => ((IEnumerable<KeyValuePair<Uri, ScanResult>>)this).GetEnumerator();
         public ScanResult FindOrAdd(Uri uri, Func<ScanResult> factory)
         {
-            lock (innerLock)
+            innerLock.EnterUpgradeableReadLock();
+            try
             {
                 ScanResult? scanResult;
                 if (!results.TryGetValue(uri, out scanResult))
                 {
                     scanResult = factory();
-                    results.Add(uri, scanResult);
+                    innerLock.EnterWriteLock();
+                    try
+                    {
+                        results.Add(uri, scanResult);
+                    }
+                    finally
+                    {
+                        innerLock.ExitWriteLock();
+                    }
                 }
                 return scanResult;
+            }
+            finally
+            {
+                innerLock.ExitUpgradeableReadLock();
             }
         }
     }
