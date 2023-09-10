@@ -20,6 +20,7 @@ namespace LinkChecker
                 MessageSeverity.Info => ConsoleColor.White,
                 MessageSeverity.Warn => ConsoleColor.Yellow,
                 MessageSeverity.Error => ConsoleColor.Red,
+                MessageSeverity.Cancel=> ConsoleColor.Cyan,
                 _ => throw new Exception("Illegal value"),
             };
             logTaskFactory.StartNew( () =>

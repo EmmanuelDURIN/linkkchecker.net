@@ -6,5 +6,6 @@
         Info,
         Warn,
         Error,
+        Cancel,
     }
 }

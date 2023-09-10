@@ -7,11 +7,15 @@ namespace SpiderEngine
     public class CanonicalChecker : ISpiderExtension
     {
         public IEngine? Engine { get; set; }
-        public Task Done() => Task.CompletedTask;
+        public Task Done(CancellationToken cancellationToken) => Task.CompletedTask;
         public void Init()
         {
         }
-        public void Process(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc)
+        public void Process(ImmutableList<CrawlStep> steps,
+                            Uri uri,
+                            HttpResponseMessage responseMessage,
+                            HtmlDocument? doc,
+                            CancellationToken cancellationToken)
         {
             bool isStillInSite = steps[0].Uri.IsBaseOf(uri);
             if (!isStillInSite)

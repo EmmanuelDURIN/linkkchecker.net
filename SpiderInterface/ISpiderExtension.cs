@@ -7,7 +7,11 @@ namespace SpiderInterface
     {
         IEngine? Engine { get; set; }
         void Init();
-        void Process(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc);
-        Task Done();
+        void Process(ImmutableList<CrawlStep> steps,
+                     Uri uri,
+                     HttpResponseMessage responseMessage,
+                     HtmlDocument? doc,
+                     CancellationToken cancellationToken);
+        Task Done(CancellationToken cancellationToken);
     }
 }

@@ -10,6 +10,11 @@ namespace SpiderInterface
         void LogException(Exception ex, Uri? parentUri, Uri uri);
         List<ISpiderExtension> Extensions { get; set; }
         ScanResultCollection ScanResultCollection { get; set; }
-        Task<bool> Process(ImmutableList<CrawlStep>? steps, Uri? parentUri, Uri uri, bool pageMayContainsLink, bool processChildrenLinks = true);
+        Task<bool> Process(ImmutableList<CrawlStep>? steps,
+                           Uri? parentUri,
+                           Uri uri,
+                           bool pageMayContainsLink,
+                           bool processChildrenLinks,
+                           CancellationToken cancellationToken);
     }
 }

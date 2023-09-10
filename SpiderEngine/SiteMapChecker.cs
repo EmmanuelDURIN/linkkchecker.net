@@ -26,10 +26,10 @@ namespace SpiderEngine
                 Engine.Logger?.Invoke($"Error loading/reading sitemap.xml {ex.Message}", MessageSeverity.Error);
             }
         }
-        public void Process(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc)
+        public void Process(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc, CancellationToken c)
         {
         }
-        public async Task Done()
+        public async Task Done(CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(Engine);
             foreach (string pageUrl in pageUrls)
@@ -41,7 +41,7 @@ namespace SpiderEngine
                 }
                 else
                 {
-                    bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false);
+                    bool result = await Engine.Process(steps: null, parentUri: null, uri: uriToCheck, pageMayContainsLink: false, processChildrenLinks: false, cancellationToken);
                     if (result)
                         Engine.Logger?.Invoke($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
                     else
