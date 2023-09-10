@@ -23,7 +23,7 @@ namespace LinkChecker
                 Logger = SingleThreadedLogger.Log
             };
             await engine.StartAsync();
-            Environment.ExitCode = engine.ScanResults.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
+            Environment.ExitCode = engine.ScanResultCollection.Count(sr => sr.Value.Status.IsSuccess() && sr.Value.Exception == null);
 
             Console.WriteLine("Press any key to continue");
             Console.ReadKey();

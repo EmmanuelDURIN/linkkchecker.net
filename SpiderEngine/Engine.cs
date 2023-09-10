@@ -8,7 +8,7 @@ namespace SpiderEngine
 {
     public class Engine : IEngine
     {
-        public Dictionary<Uri, ScanResult> ScanResults { get; set; } = new Dictionary<Uri, ScanResult>();
+        public ScanResultCollection ScanResultCollection { get; set; } = new ();
         public List<ISpiderExtension> Extensions { get; set; } = new List<ISpiderExtension>();
         public Action<Exception, Uri?, Uri>? ExceptionLogger { get; set; }
         public Action<string, MessageSeverity>? Logger { get; set; }
@@ -93,14 +93,14 @@ namespace SpiderEngine
             {
                 ScanResult? scanResult = null;
 
-                if (!this.ScanResults.ContainsKey(uri))
+                if (!this.ScanResultCollection.ContainsKey(uri))
                 {
                     scanResult = new ScanResult();
-                    this.ScanResults.Add(uri, scanResult);
+                    this.ScanResultCollection.Add(uri, scanResult);
                 }
                 else
                 {
-                    scanResult = this.ScanResults[uri];
+                    scanResult = this.ScanResultCollection[uri];
                 }
 
                 HttpClient client = new HttpClient();
@@ -162,7 +162,7 @@ namespace SpiderEngine
             catch (Exception ex)
             {
                 LogException(ex, parentUri, uri);
-                this.ScanResults[uri] = new ScanResult { Exception = ex };
+                this.ScanResultCollection[uri] = new ScanResult { Exception = ex };
             }
             return result;
         }
@@ -177,7 +177,7 @@ namespace SpiderEngine
             string scheme = uri.Scheme;
             if (!supportedSchemes.Contains(scheme.ToLower()))
             {
-                this.ScanResults.Add(uri, new ScanResult { IsUnsupportedScheme = true });
+                this.ScanResultCollection.Add(uri, new ScanResult { IsUnsupportedScheme = true });
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"Unsupported scheme {scheme} for {uri}");
                 Console.ForegroundColor = ConsoleColor.White;
@@ -252,7 +252,7 @@ namespace SpiderEngine
                 {
                     derivedUri = new Uri(uri, attributeValue);
                 }
-                bool alreadyVisited = this.ScanResults.ContainsKey(derivedUri);
+                bool alreadyVisited = this.ScanResultCollection.ContainsKey(derivedUri);
                 if (!alreadyVisited)
                 {
                     ArgumentNullException.ThrowIfNull(Config);

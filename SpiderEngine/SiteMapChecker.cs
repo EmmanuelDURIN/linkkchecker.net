@@ -34,7 +34,7 @@ namespace SpiderEngine
             foreach (string pageUrl in pageUrls)
             {
                 Uri uriToCheck = new Uri(pageUrl);
-                if (Engine.ScanResults.ContainsKey(uriToCheck))
+                if (Engine.ScanResultCollection.ContainsKey(uriToCheck))
                 {
                     Engine.Logger?.Invoke($"Sitemap url ok {pageUrl}", MessageSeverity.Success);
                 }
