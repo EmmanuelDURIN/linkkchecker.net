@@ -5,7 +5,6 @@ namespace SpiderInterface
 {
     public class ScanResultCollection : IEnumerable<KeyValuePair<Uri, ScanResult>>
     {
-
         private SafeReaderWriterLockProvider innerLock = new SafeReaderWriterLockProvider();
         private Dictionary<Uri, ScanResult> results = new Dictionary<Uri, ScanResult>();
         public void Add(Uri key, ScanResult value)
@@ -45,8 +44,7 @@ namespace SpiderInterface
         {
             using (innerLock.GetReadLock())
             {
-                Dictionary<Uri, ScanResult>.Enumerator enumerator = results.GetEnumerator();
-                return enumerator;
+                return new Dictionary<Uri, ScanResult>(results).GetEnumerator();
             }
         }
         IEnumerator IEnumerable.GetEnumerator()
