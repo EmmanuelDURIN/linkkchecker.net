@@ -45,8 +45,7 @@ namespace SpiderInterface
         {
             using (innerLock.GetReadLock())
             {
-                Dictionary<Uri, ScanResult>.Enumerator enumerator = results.GetEnumerator();
-                return enumerator;
+                return new Dictionary<Uri, ScanResult>(results).GetEnumerator();
             }
         }
         IEnumerator IEnumerable.GetEnumerator()
