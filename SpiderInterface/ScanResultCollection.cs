@@ -6,7 +6,6 @@ namespace SpiderInterface
     {
         private object innerLock = new object();
         private Dictionary<Uri, ScanResult> results = new Dictionary<Uri, ScanResult>();
-
         public void Add(Uri key, ScanResult value)
         {
             lock (innerLock)
@@ -42,7 +41,7 @@ namespace SpiderInterface
         {
             lock (innerLock)
             {
-                return results.GetEnumerator();
+                return new Dictionary<Uri, ScanResult>(results).GetEnumerator();
             }
         }
         IEnumerator IEnumerable.GetEnumerator()
