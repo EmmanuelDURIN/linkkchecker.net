@@ -1,4 +1,5 @@
 ﻿using SpiderInterface;
+using System;
 
 namespace LinkChecker
 {
@@ -13,6 +14,7 @@ namespace LinkChecker
         }
         internal static void Log(string msg, MessageSeverity severity)
         {
+            // C#7 switch expression
             ConsoleColor newColor = severity switch
             {
                 MessageSeverity.Success => ConsoleColor.Green,
@@ -20,25 +22,14 @@ namespace LinkChecker
                 MessageSeverity.Warn => ConsoleColor.Yellow,
                 MessageSeverity.Error => ConsoleColor.Red,
                 _ => throw new Exception("Illegal value"),
-                //    break;
-                //case MessageSeverity.Info:
-                //    Console.ForegroundColor = ConsoleColor.White;
-                //    break;
-                //case MessageSeverity.Warn:
-                //    Console.ForegroundColor = ConsoleColor.Yellow;
-                //    break;
-                //case MessageSeverity.Error:
-                //    Console.ForegroundColor = ConsoleColor.Red;
-                //    break;
-                //default:
-                //    break;
             };
-            //lock (logLock)
-            //{
+            lock (logLock)
+            {
+                // E/S => lent
                 Console.ForegroundColor = newColor;
                 Console.WriteLine(msg);
                 Console.ForegroundColor = ConsoleColor.White;
-            //}
+            }
         }
     }
 }
