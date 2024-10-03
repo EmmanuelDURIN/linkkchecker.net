@@ -47,7 +47,7 @@ namespace SpiderEngine
             {
                 LogException(ex, null, BaseUri);
             }
-            Done();
+            await DoneAsync();
         }
         private void Init()
         {
@@ -58,11 +58,11 @@ namespace SpiderEngine
                 extension.Init();
             }
         }
-        private void Done()
+        private async Task DoneAsync()
         {
             foreach (var extension in Extensions)
             {
-                extension.Done();
+                await extension.DoneAsync();
             }
             stopwatch.Stop();
             Logger?.Invoke($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
