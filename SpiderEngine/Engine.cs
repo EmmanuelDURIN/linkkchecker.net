@@ -48,7 +48,7 @@ namespace SpiderEngine
             {
                 LogException(ex, null, BaseUri);
             }
-            Done();
+            await DoneAsync();
         }
         private void Init()
         {
@@ -59,11 +59,11 @@ namespace SpiderEngine
                 extension.Init();
             }
         }
-        private void Done()
+        private async Task DoneAsync()
         {
             foreach (var extension in Extensions)
             {
-                extension.Done();
+                await extension.DoneAsync();
             }
             stopwatch.Stop();
             Logger?.Invoke($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
@@ -214,15 +214,8 @@ namespace SpiderEngine
                 string attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
                 List<Task> tasks = links
-                    .Select(link =>  Task.Run( async() => await ScanLinkAsync(steps, uri, attributeName, link) ) )
+                    .Select(link => ScanLinkAsync(steps, uri, attributeName, link) )
                     .ToList();
-                // Equivalent à 
-                //List<Task> tasks = new List<Task>();
-                //foreach (var link in links)
-                //{
-                //    Task t = Task.Run(async () => { await ScanLinkAsync(steps, uri, attributeName, link); });
-                //    tasks.Add(t);
-                //}
                 await Task.WhenAll(tasks);
             }
         }
