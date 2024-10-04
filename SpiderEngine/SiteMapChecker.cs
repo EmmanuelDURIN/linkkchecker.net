@@ -29,7 +29,7 @@ namespace SpiderEngine
         public void Process(ImmutableList<CrawlStep> steps, Uri uri, HttpResponseMessage responseMessage, HtmlDocument? doc, CancellationToken c)
         {
         }
-        public async Task Done(CancellationToken cancellationToken)
+        public async Task DoneAsync(CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(Engine);
             foreach (string pageUrl in pageUrls)

@@ -54,7 +54,7 @@ namespace SpiderEngine
             {
                 LogException(ex, null, BaseUri);
             }
-            Done(cancellationToken);
+             await DoneAsync(cancellationToken);
         }
         private void Init()
         {
@@ -65,11 +65,11 @@ namespace SpiderEngine
                 extension.Init();
             }
         }
-        private void Done(CancellationToken cancellationToken)
+        private async Task DoneAsync(CancellationToken cancellationToken)
         {
             foreach (var extension in Extensions)
             {
-                extension.Done(cancellationToken);
+                await extension.DoneAsync(cancellationToken);
             }
             stopwatch.Stop();
             Logger?.Invoke($"Finished crawling at {DateTime.Now}", MessageSeverity.Success);
@@ -225,15 +225,8 @@ namespace SpiderEngine
                 string attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
                 List<Task> tasks = links
-                    .Select(link => Task.Run( async() => await ScanLinkAsync(steps, uri, attributeName, link, cancellationToken) ) )
+                    .Select(link => ScanLinkAsync(steps, uri, attributeName, link, cancellationToken) )
                     .ToList();
-                // Equivalent à 
-                //List<Task> tasks = new List<Task>();
-                //foreach (var link in links)
-                //{
-                //    Task t = Task.Run(async () => { await ScanLinkAsync(steps, uri, attributeName, link); });
-                //    tasks.Add(t);
-                //}
                 await Task.WhenAll(tasks);
             }
         }

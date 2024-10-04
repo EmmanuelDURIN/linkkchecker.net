@@ -7,7 +7,7 @@ namespace SpiderEngine
     public class CanonicalChecker : ISpiderExtension
     {
         public IEngine? Engine { get; set; }
-        public Task Done(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task DoneAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         public void Init()
         {
         }

@@ -12,6 +12,6 @@ namespace SpiderInterface
                      HttpResponseMessage responseMessage,
                      HtmlDocument? doc,
                      CancellationToken cancellationToken);
-        Task Done(CancellationToken cancellationToken);
+        Task DoneAsync(CancellationToken cancellationToken);
     }
 }
