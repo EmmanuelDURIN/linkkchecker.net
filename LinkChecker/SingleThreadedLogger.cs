@@ -4,13 +4,16 @@ namespace LinkChecker
 {
     internal class SingleThreadedLogger
     {
-        private static ConcurrentExclusiveSchedulerPair schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default,maxConcurrencyLevel:1);
-        private static TaskFactory logTaskFactory = new TaskFactory(schedulerPair.ExclusiveScheduler);
+        private static readonly ConcurrentExclusiveSchedulerPair schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, maxConcurrencyLevel: 1);
+        private static readonly TaskFactory logTaskFactory = new TaskFactory(schedulerPair.ExclusiveScheduler);
         internal static void LogException(Exception ex, Uri? parentUri, Uri uri)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
-            Console.ForegroundColor = ConsoleColor.White;
+            logTaskFactory.StartNew(() =>
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
+                Console.ForegroundColor = ConsoleColor.White;
+            });
         }
         internal static void Log(string msg, MessageSeverity severity)
         {
@@ -22,7 +25,7 @@ namespace LinkChecker
                 MessageSeverity.Error => ConsoleColor.Red,
                 _ => throw new Exception("Illegal value"),
             };
-            logTaskFactory.StartNew( () =>
+            logTaskFactory.StartNew(() =>
             {
                 Console.ForegroundColor = newColor;
                 Console.WriteLine(msg);
