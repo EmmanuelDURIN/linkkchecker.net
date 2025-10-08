@@ -32,7 +32,7 @@ namespace SpiderEngine
                 }
             }
         }
-        private Stopwatch stopwatch = new Stopwatch();
+        private readonly Stopwatch stopwatch = new Stopwatch();
         public async Task StartAsync()
         {
             Uri? startUri = Config?.StartUri;
@@ -155,7 +155,7 @@ namespace SpiderEngine
                     case (int)HttpStatusCode.RedirectKeepVerb:
                     case (int)HttpStatusCode.SeeOther:
                         // TODO process redirections
-                        Debug.Assert(false, "Redirected");
+                        //Debug.Assert(false, "Redirected");
                         break;
                 }
             }
@@ -185,8 +185,8 @@ namespace SpiderEngine
             }
             return true;
         }
-        private static List<string> supportedSchemes = new List<string> { "http", "https" };
-        private static Dictionary<string, string> tags2Attribute = new Dictionary<string, string>
+        private static readonly List<string> supportedSchemes = new List<string> { "http", "https" };
+        private static readonly Dictionary<string, string> tags2Attribute = new Dictionary<string, string>
         {
             { "a","href" },
             { "script","src" },
@@ -224,7 +224,7 @@ namespace SpiderEngine
                 string attributeName = pair.Value;
                 IEnumerable<HtmlNode> links = documentNode.Descendants(tagName);
                 List<Task> tasks = links
-                    .Select(link => ScanLinkAsync(steps, uri, attributeName, link) )
+                    .Select(link => ScanLinkAsync(steps, uri, attributeName, link))
                     .ToList();
                 await Task.WhenAll(tasks);
             }

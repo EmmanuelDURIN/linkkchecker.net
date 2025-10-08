@@ -1,16 +1,18 @@
 ﻿using SpiderInterface;
-using System;
 
 namespace LinkChecker
 {
     internal class SingleThreadedLogger
     {
-        private static object logLock = new object();
+        private static readonly object logLock = new object();
         internal static void LogException(Exception ex, Uri? parentUri, Uri uri)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
-            Console.ForegroundColor = ConsoleColor.White;
+            lock (logLock)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Exception {ex.Message} processing {uri} parent is {parentUri}");
+                Console.ForegroundColor = ConsoleColor.White;
+            }
         }
         internal static void Log(string msg, MessageSeverity severity)
         {
