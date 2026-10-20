@@ -4,7 +4,7 @@ namespace LinkChecker
 {
     internal class SingleThreadedLogger
     {
-        private static readonly object logLock = new object();
+        private static readonly Lock logLock = new();
         internal static void LogException(Exception ex, Uri? parentUri, Uri uri)
         {
             lock (logLock)
