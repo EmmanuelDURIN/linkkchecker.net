@@ -1,63 +1,52 @@
 ﻿using System.Collections;
+using static System.Threading.Lock;
 
 namespace SpiderInterface
 {
     public class ScanResultCollection : IEnumerable<KeyValuePair<Uri, ScanResult>>
     {
-        private object innerLock = new object();
+        private Lock innerLock = new();
         private Dictionary<Uri, ScanResult> results = new Dictionary<Uri, ScanResult>();
         public void Add(Uri key, ScanResult value)
         {
-            lock (innerLock)
-            {
-                results.Add(key, value);
-            }
+            using Scope scope = innerLock.EnterScope();
+            results.Add(key, value);
         }
         public bool ContainsKey(Uri uriToCheck)
         {
-            lock (innerLock)
-            {
-                return results.ContainsKey(uriToCheck);
-            }
+            using Scope scope = innerLock.EnterScope();
+            return results.ContainsKey(uriToCheck);
         }
         public ScanResult this[Uri key]
         {
             get
             {
-                lock (innerLock)
-                {
-                    return results[key];
-                }
+                using Scope scope = innerLock.EnterScope();
+                return results[key];
             }
             set
             {
-                lock (innerLock)
-                {
-                    results[key] = value;
-                }
+                using Scope scope = innerLock.EnterScope();
+                results[key] = value;
             }
         }
         public IEnumerator<KeyValuePair<Uri, ScanResult>> GetEnumerator()
         {
-            lock (innerLock)
-            {
-                return new Dictionary<Uri, ScanResult>(results).GetEnumerator();
-            }
+            using Scope scope = innerLock.EnterScope();
+            return new Dictionary<Uri, ScanResult>(results).GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
             => ((IEnumerable<KeyValuePair<Uri, ScanResult>>)this).GetEnumerator();
         public ScanResult FindOrAdd(Uri uri, Func<ScanResult> factory)
         {
-            lock (innerLock)
+            using Scope scope = innerLock.EnterScope();
+            ScanResult? scanResult;
+            if (!results.TryGetValue(uri, out scanResult))
             {
-                ScanResult? scanResult;
-                if (!results.TryGetValue(uri, out scanResult))
-                {
-                    scanResult = factory();
-                    results.Add(uri, scanResult);
-                }
-                return scanResult;
+                scanResult = factory();
+                results.Add(uri, scanResult);
             }
+            return scanResult;
         }
     }
 }

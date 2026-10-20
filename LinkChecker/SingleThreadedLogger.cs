@@ -1,11 +1,10 @@
 ﻿using SpiderInterface;
-using System;
 
 namespace LinkChecker
 {
     internal class SingleThreadedLogger
     {
-        private static object logLock = new object();
+        private static Lock logLock = new();
         internal static void LogException(Exception ex, Uri? parentUri, Uri uri)
         {
             Console.ForegroundColor = ConsoleColor.Red;
