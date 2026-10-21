@@ -1,6 +1,6 @@
 {
   "onlyCheckInnerLinks": false,
-  "startUri": "http://localhost:2965/Paysagiste",
+  "startUri": "https://localhost:7009",
   "extensionList": [
     {
       "class": "SpiderEngine.CanonicalChecker",
